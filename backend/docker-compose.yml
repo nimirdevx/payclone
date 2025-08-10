@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 services:
   # ----------------- INFRASTRUCTURE -----------------
   zookeeper:
@@ -19,7 +19,7 @@ services:
       - zookeeper
     environment:
       KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
@@ -54,7 +54,7 @@ services:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://service-discovery:8761/eureka/
       SPRING_DATASOURCE_URL: jdbc:mysql://host.docker.internal:3306/paypal_users
       SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_DATASOURCE_PASSWORD: memorysucks1
 
   wallet-service:
     build:
@@ -71,7 +71,7 @@ services:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://service-discovery:8761/eureka/
       SPRING_DATASOURCE_URL: jdbc:mysql://host.docker.internal:3306/paypal_wallets
       SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_DATASOURCE_PASSWORD: memorysucks1
 
   transaction-service:
     build:
@@ -90,7 +90,7 @@ services:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://service-discovery:8761/eureka/
       SPRING_DATASOURCE_URL: jdbc:mysql://host.docker.internal:3306/paypal_transactions
       SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_DATASOURCE_PASSWORD: memorysucks1
       SPRING_KAFKA_PRODUCER_BOOTSTRAP_SERVERS: kafka:29092
 
   notification-service:

@@ -7,7 +7,7 @@ spring:
   datasource:
     url: jdbc:mysql://localhost:3306/paypal_transactions
     username: root # <-- Change this
-    password: root # <-- Change this
+    password: memorysucks1 # <-- Change this
   jpa:
     hibernate:
       ddl-auto: update
