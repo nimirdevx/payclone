@@ -1,9 +1,15 @@
-package com.clone.paypal.transaction_service;
+package com.clone.paypal.wallet_service;
 
 public class NotificationRequest {
     private Long userId;
     private String message;
+
     public NotificationRequest() {}
+
+    public NotificationRequest(Long userId, String message) {
+        this.userId = userId;
+        this.message = message;
+    }
 
     public Long getUserId() {
         return userId;

@@ -12,6 +12,11 @@ spring:
     hibernate:
       ddl-auto: update # Automatically creates the 'wallets' table
     show-sql: true
+  kafka:
+    producer:
+      bootstrap-servers: kafka:29092
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
 eureka:
   client:

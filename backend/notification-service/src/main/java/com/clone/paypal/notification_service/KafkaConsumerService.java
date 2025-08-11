@@ -1,13 +1,12 @@
 package com.clone.paypal.notification_service;
 
-import com.clone.paypal.transaction_service.NotificationRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
-import java.time.ZoneId;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 @Service
 public class KafkaConsumerService {
