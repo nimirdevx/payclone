@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
+import java.time.ZoneId;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -28,14 +29,14 @@ public class MoneyRequestController {
     public ResponseEntity<?> createMoneyRequest(@RequestBody CreateMoneyRequestDto requestDto) {
         try {
             MoneyRequest moneyRequest = new MoneyRequest(
-                requestDto.requesterId,
-                requestDto.recipientId,
-                requestDto.amount,
-                requestDto.message,
-                "pending",
-                LocalDateTime.now()
+                    requestDto.requesterId,
+                    requestDto.recipientId,
+                    requestDto.amount,
+                    requestDto.message,
+                    "pending",
+                    LocalDateTime.now(ZoneId.of("Asia/Kolkata"))
             );
-            
+
             MoneyRequest savedRequest = moneyRequestRepository.save(moneyRequest);
             return ResponseEntity.ok(Map.of("message", "Money request created successfully", "request", savedRequest));
         } catch (Exception e) {
@@ -96,6 +97,27 @@ public class MoneyRequestController {
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(500).body(Map.of("error", "Failed to reject request"));
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> cancelRequest(@PathVariable Long id) {
+        try {
+            Optional<MoneyRequest> requestOptional = moneyRequestRepository.findById(id);
+            if (requestOptional.isPresent()) {
+                MoneyRequest request = requestOptional.get();
+                if ("pending".equals(request.getStatus())) {
+                    moneyRequestRepository.delete(request);
+                    return ResponseEntity.ok(Map.of("message", "Money request cancelled successfully"));
+                } else {
+                    return ResponseEntity.badRequest().body(Map.of("error", "Only pending requests can be cancelled"));
+                }
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", "Failed to cancel request"));
         }
     }
 }

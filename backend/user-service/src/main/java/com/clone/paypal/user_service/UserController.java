@@ -44,7 +44,7 @@ public class UserController {
         if (userOptional.isPresent()) {
             User user = userOptional.get();
             if (passwordEncoder.matches(loginRequest.password, user.getPassword())) {
-                // For now, return a simple placeholder token. In a real app, this would be a securely generated JWT.
+                // Use getFullName() instead of getName()
                 return ResponseEntity.ok(new LoginResponse("dummy-jwt-token-for-" + user.getId(), user.getId(), user.getFullName()));
             }
         }
@@ -52,7 +52,7 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
     }
 
-        @GetMapping("/email/{email}")
+    @GetMapping("/email/{email}")
     public ResponseEntity<User> getUserByEmail(@PathVariable String email) {
         Optional<User> userOptional = userRepository.findByEmail(email);
         return userOptional.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
@@ -86,26 +86,49 @@ public class UserController {
             // Fetch transactions from transaction service
             String transactionServiceUrl = "http://transaction-service:8083/api/transactions/user/" + id;
             ResponseEntity<Map> transactionResponse = restTemplate.getForEntity(transactionServiceUrl, Map.class);
-            
+
             // Fetch wallet info from wallet service
             String walletServiceUrl = "http://wallet-service:8082/api/wallets/user/" + id;
             ResponseEntity<Map> walletResponse = restTemplate.getForEntity(walletServiceUrl, Map.class);
-            
+
             // Create analytics response
             Map<String, Object> analytics = Map.of(
-                "transactions", transactionResponse.getBody() != null ? transactionResponse.getBody() : Map.of(),
-                "wallet", walletResponse.getBody() != null ? walletResponse.getBody() : Map.of(),
-                "summary", Map.of(
-                    "totalTransactions", 0, // This would be calculated from actual data
-                    "totalSpent", 0,
-                    "totalReceived", 0
-                )
+                    "transactions", transactionResponse.getBody() != null ? transactionResponse.getBody() : Map.of(),
+                    "wallet", walletResponse.getBody() != null ? walletResponse.getBody() : Map.of(),
+                    "summary", Map.of(
+                            "totalTransactions", 0, // This would be calculated from actual data
+                            "totalSpent", 0,
+                            "totalReceived", 0
+                    )
             );
-            
+
             return ResponseEntity.ok(analytics);
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(500).body(Map.of("error", "Failed to fetch user analytics"));
         }
+    }
+
+    public static class PasswordChangeRequest {
+        public String currentPassword;
+        public String newPassword;
+    }
+
+    @PutMapping("/{id}/password")
+    public ResponseEntity<?> changePassword(@PathVariable Long id, @RequestBody PasswordChangeRequest passwordChangeRequest) {
+        Optional<User> userOptional = userRepository.findById(id);
+
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            if (passwordEncoder.matches(passwordChangeRequest.currentPassword, user.getPassword())) {
+                user.setPassword(passwordEncoder.encode(passwordChangeRequest.newPassword));
+                userRepository.save(user);
+                return ResponseEntity.ok(Map.of("message", "Password changed successfully"));
+            } else {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid current password");
+            }
+        }
+
+        return ResponseEntity.notFound().build();
     }
 }

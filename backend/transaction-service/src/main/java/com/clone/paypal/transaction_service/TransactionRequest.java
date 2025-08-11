@@ -6,6 +6,7 @@ public class TransactionRequest {
     private Long senderId;
     private String recipientEmail;
     private BigDecimal amount;
+    private String description; // Add this new field
 
     public Long getSenderId() {
         return senderId;
@@ -29,5 +30,13 @@ public class TransactionRequest {
 
     public void setAmount(BigDecimal amount) {
         this.amount = amount;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 }

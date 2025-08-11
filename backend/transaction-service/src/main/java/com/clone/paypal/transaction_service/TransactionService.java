@@ -6,6 +6,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.HttpClientErrorException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 @Service
 public class TransactionService {
@@ -16,12 +17,13 @@ public class TransactionService {
     private final String walletServiceUrl = "http://WALLET-SERVICE/api/wallets";
     private final String userServiceUrl = "http://USER-SERVICE/api/users";
 
-    public Transaction performTransaction(Long senderId, String recipientEmail, BigDecimal amount) {
+    public Transaction performTransaction(Long senderId, String recipientEmail, BigDecimal amount, String description) { // Add description to the method signature
         Transaction transaction = new Transaction();
         transaction.setSenderId(senderId);
-        transaction.setRecipientId(null); // Will be set if recipient is found
+        transaction.setRecipientId(null);
         transaction.setAmount(amount);
-        transaction.setTimestamp(LocalDateTime.now());
+        transaction.setDescription(description); // Set the description
+        transaction.setTimestamp(LocalDateTime.now(ZoneId.of("Asia/Kolkata")));
 
         User recipientUser = null;
         try {

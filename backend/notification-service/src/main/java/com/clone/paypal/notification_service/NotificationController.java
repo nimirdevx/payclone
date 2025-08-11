@@ -42,4 +42,32 @@ public class NotificationController {
             return ResponseEntity.status(500).body(Map.of("error", "Failed to mark notification as read"));
         }
     }
+
+    @PutMapping("/user/{userId}/read-all")
+    public ResponseEntity<?> markAllNotificationsAsRead(@PathVariable Long userId) {
+        try {
+            List<Notification> notifications = notificationRepository.findByUserIdOrderByTimestampDesc(userId);
+            notifications.forEach(notification -> notification.setRead(true));
+            notificationRepository.saveAll(notifications);
+            return ResponseEntity.ok(Map.of("message", "All notifications marked as read"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", "Failed to mark all notifications as read"));
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteNotification(@PathVariable Long id) {
+        try {
+            if (notificationRepository.existsById(id)) {
+                notificationRepository.deleteById(id);
+                return ResponseEntity.ok(Map.of("message", "Notification deleted successfully"));
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", "Failed to delete notification"));
+        }
+    }
 }

@@ -12,8 +12,12 @@ public class TransactionController {
 
     @PostMapping
     public ResponseEntity<Transaction> createTransaction(@RequestBody TransactionRequest request) {
+        // Pass the description from the request to the service method
         Transaction newTransaction = transactionService.performTransaction(
-                request.getSenderId(), request.getRecipientEmail(), request.getAmount()
+                request.getSenderId(),
+                request.getRecipientEmail(),
+                request.getAmount(),
+                request.getDescription()
         );
         return ResponseEntity.ok(newTransaction);
     }
@@ -22,5 +26,12 @@ public class TransactionController {
     public ResponseEntity<List<Transaction>> getTransactionsByUserId(@PathVariable Long userId) {
         List<Transaction> transactions = transactionRepository.findBySenderIdOrRecipientId(userId, userId);
         return ResponseEntity.ok(transactions);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Transaction> getTransactionById(@PathVariable Long id) {
+        return transactionRepository.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 }

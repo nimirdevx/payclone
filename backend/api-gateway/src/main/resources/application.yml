@@ -13,13 +13,15 @@ spring:
             allowedMethods:
               - GET
               - POST
+              - PUT
+              - DELETE
             allowedHeaders: "*"
       routes:
-        # Route for the User Service
+        # Route for the User Service (now handles both /users and /requests)
         - id: user-service-route
           uri: lb://USER-SERVICE
           predicates:
-            - Path=/api/users/**
+            - Path=/api/users/**, /api/requests/**
 
         # Route for the Wallet Service
         - id: wallet-service-route
@@ -27,12 +29,13 @@ spring:
           predicates:
             - Path=/api/wallets/**
 
-        # Add this new route for the Transaction Service
+        # Route for the Transaction Service
         - id: transaction-service-route
-          uri: lb://TRANSACTION-SERVICE # Tells the gateway to find TRANSACTION-SERVICE in Eureka
+          uri: lb://TRANSACTION-SERVICE
           predicates:
-            - Path=/api/transactions/** # Any request to /api/transactions/... will be forwarded
+            - Path=/api/transactions/**
 
+        # Route for the Notification Service
         - id: notification-service-route
           uri: lb://NOTIFICATION-SERVICE
           predicates:

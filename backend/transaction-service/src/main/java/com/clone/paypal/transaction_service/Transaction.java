@@ -12,7 +12,7 @@ public class Transaction {
     private Long recipientId;
     private BigDecimal amount;
     private String status;
-    private String description;
+    private String description; // Add this new field
 
     public Long getId() {
         return id;

@@ -6,8 +6,8 @@ spring:
     name: USER-SERVICE # The name it will use to register with Eureka
   datasource:
     url: jdbc:mysql://localhost:3306/paypal_users # Connects to the DB you just created
-    username: root # <-- IMPORTANT: Change this
-    password: memorysucks1 # <-- IMPORTANT: Change this
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
   jpa:
     hibernate:
       ddl-auto: update # Automatically creates/updates tables based on your code
