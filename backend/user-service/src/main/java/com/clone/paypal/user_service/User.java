@@ -14,7 +14,25 @@ public class User {
     private String email;
 
     @Column(nullable = false)
+    private String firstName;
+
+    @Column(nullable = false)
+    private String lastName;
+
+    @Column
+    private String avatar;
+
+    @Column(nullable = false)
+    private String password;
+
+    @Column(nullable = false)
     private String name;
+
+    @PrePersist
+    @PreUpdate
+    private void updateName() {
+        this.name = (firstName + " " + lastName).trim();
+    }
 
     public Long getId() {
         return id;
@@ -32,12 +50,33 @@ public class User {
         this.email = email;
     }
 
-    public String getName() {
-        return name;
+    public String getFirstName() {
+        return firstName;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+
+    public String getAvatar() {
+        return avatar;
+    }
+
+    public void setAvatar(String avatar) {
+        this.avatar = avatar;
+    }
+
+    // Convenience method to get full name
+    public String getFullName() {
+        return firstName + " " + lastName;
     }
 
     public String getPassword() {
@@ -48,6 +87,11 @@ public class User {
         this.password = password;
     }
 
-    @Column(nullable = false)
-    private String password;
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
 }

@@ -12,6 +12,7 @@ public class Transaction {
     private Long recipientId;
     private BigDecimal amount;
     private String status;
+    private String description;
 
     public Long getId() {
         return id;
@@ -59,6 +60,14 @@ public class Transaction {
 
     public void setSenderId(Long senderId) {
         this.senderId = senderId;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     private LocalDateTime timestamp;

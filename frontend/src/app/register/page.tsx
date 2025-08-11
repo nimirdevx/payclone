@@ -8,41 +8,53 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { AuthCard } from "@/components/auth-card";
-import api from "@/lib/api";
+import { authApi } from "@/lib/api-service";
+import { useToast } from "@/hooks/use-toast";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [name, setName] = useState("");
+  const { toast } = useToast();
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
+    
+    if (!firstName.trim() || !lastName.trim() || !email.trim() || !password.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please fill in all fields",
+      });
+      return;
+    }
+    
     setLoading(true);
     try {
       console.log("Attempting registration for:", email);
-      const response = await api.post("/users/register", {
-        name,
-        email,
+      await authApi.register({
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        email: email.trim(),
         password,
       });
-      console.log("Registration API response:", response.data);
-      const userId = response.data.id;
-      await api.post("/wallets", { userId: userId });
-      console.log("Wallet created for user:", userId);
+      
+      toast({
+        title: "Success",
+        description: "Account created successfully! Please log in.",
+      });
+      
       router.push("/login");
-      console.log("Navigating to /login");
     } catch (err: any) {
-      console.error(
-        "Registration failed",
-        err.response ? err.response.data : err.message
-      );
-      setError(
-        err.response?.data?.message || "Registration failed. Please try again."
-      );
+      console.error("Registration failed:", err);
+      toast({
+        variant: "destructive",
+        title: "Registration Failed",
+        description: err.response?.data?.message || "Registration failed. Please try again.",
+      });
     } finally {
       setLoading(false);
     }
@@ -69,18 +81,29 @@ export default function RegisterPage() {
         }
       >
         <form onSubmit={handleRegister} className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="name">Name</Label>
-            <Input
-              id="name"
-              type="text"
-              placeholder="John Doe"
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="focus-visible:ring-paypal-primary"
-              disabled={loading}
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="firstName">First Name</Label>
+              <Input
+                id="firstName"
+                type="text"
+                placeholder="Enter your first name"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                required
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="lastName">Last Name</Label>
+              <Input
+                id="lastName"
+                type="text"
+                placeholder="Enter your last name"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                required
+              />
+            </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
@@ -107,8 +130,8 @@ export default function RegisterPage() {
               disabled={loading}
             />
           </div>
-          {error && (
-            <p className="text-destructive text-sm text-center">{error}</p>
+          {false && (
+            <p className="text-destructive text-sm text-center">{false}</p>
           )}
           <Button
             type="submit"

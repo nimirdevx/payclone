@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { HandCoins, Send, Check, X, Clock, Plus } from "lucide-react";
+import { HandCoins, Send, Check, X, Clock, Plus, Search, User as UserIcon } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import {
   Dialog,
@@ -27,152 +27,219 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { formatDistanceToNowStrict } from "date-fns";
-import api from "@/lib/api";
-
-interface MoneyRequest {
-  id: number;
-  requesterId: number;
-  recipientId: number;
-  amount: number;
-  message: string;
-  status: "pending" | "approved" | "rejected";
-  timestamp: string;
-  requesterName?: string;
-  recipientName?: string;
-}
+import { useToast } from "@/hooks/use-toast";
+import { MoneyRequest, User } from "@/types";
+import { requestApi, userApi, authApi } from "@/lib/api-service";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function RequestMoneyPage() {
+  const { toast } = useToast();
   const router = useRouter();
   const [incomingRequests, setIncomingRequests] = useState<MoneyRequest[]>([]);
   const [outgoingRequests, setOutgoingRequests] = useState<MoneyRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [user, setUser] = useState<{ id: number; name: string; email: string } | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [newRequest, setNewRequest] = useState({
     recipientEmail: "",
     amount: "",
     message: "",
   });
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<User[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (token) {
-      fetchUser();
-    } else {
+    if (!token) {
       router.push("/login");
+      return;
     }
-  }, [router]);
-
-  useEffect(() => {
-    if (user) {
-      fetchRequests();
-    }
-  }, [user]);
-
-  const fetchUser = async () => {
+    
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        await Promise.all([
+          fetchIncomingRequests(),
+          fetchOutgoingRequests(),
+          fetchCurrentUser()
+        ]);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to load data. Please try again.",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchData();
+  }, []);
+  
+  const fetchCurrentUser = async () => {
     try {
-      const response = await api.get("/users/me");
-      setUser(response.data);
-    } catch (err: any) {
-      setUser({ id: 1, name: "John Doe", email: "john.doe@example.com" });
+      const response = await authApi.getMe();
+      setUser(response);
+    } catch (error) {
+      console.error("Error fetching current user:", error);
+      throw error;
     }
   };
-
-  const fetchRequests = async () => {
+  
+  const fetchIncomingRequests = async () => {
     try {
-      setLoading(true);
-      const token = localStorage.getItem("token");
-      if (!token) {
-        router.push("/login");
-        return;
-      }
-
-      // Mock data for development
-      const mockIncoming = [
-        {
-          id: 1,
-          requesterId: 2,
-          recipientId: 1,
-          amount: 150.00,
-          message: "Dinner split from last night",
-          status: "pending" as const,
-          timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-          requesterName: "John Doe",
-        },
-        {
-          id: 2,
-          requesterId: 3,
-          recipientId: 1,
-          amount: 75.50,
-          message: "Movie tickets reimbursement",
-          status: "pending" as const,
-          timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-          requesterName: "Jane Smith",
-        },
-      ];
-
-      const mockOutgoing = [
-        {
-          id: 3,
-          requesterId: 1,
-          recipientId: 4,
-          amount: 200.00,
-          message: "Rent contribution",
-          status: "approved" as const,
-          timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-          recipientName: "Alice Johnson",
-        },
-        {
-          id: 4,
-          requesterId: 1,
-          recipientId: 5,
-          amount: 50.00,
-          message: "Lunch money",
-          status: "pending" as const,
-          timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-          recipientName: "Bob Wilson",
-        },
-      ];
-
-      setIncomingRequests(mockIncoming);
-      setOutgoingRequests(mockOutgoing);
+      const response = await requestApi.getIncomingRequests();
+      setIncomingRequests(response);
     } catch (error) {
-      console.error("Error fetching requests:", error);
+      console.error("Error fetching incoming requests:", error);
+      setIncomingRequests([]);
+    }
+  };
+  
+  const fetchOutgoingRequests = async () => {
+    try {
+      const response = await requestApi.getOutgoingRequests();
+      setOutgoingRequests(response);
+    } catch (error) {
+      console.error("Error fetching outgoing requests:", error);
+      setOutgoingRequests([]);
+    }
+  };
+  
+  const handleSearchUsers = async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      return;
+    }
+    
+    try {
+      setIsSearching(true);
+      const response = await userApi.searchUsers(query);
+      const currentUser = user?.id;
+      setSearchResults(response.filter((u: User) => u.id !== currentUser));
+    } catch (error) {
+      console.error("Error searching users:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to search users. Please try again.",
+      });
     } finally {
-      setLoading(false);
+      setIsSearching(false);
     }
   };
 
   const handleCreateRequest = async () => {
+    if (!newRequest.recipientEmail || !newRequest.amount) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please enter recipient email and amount",
+      });
+      return;
+    }
+    
     try {
-      const token = localStorage.getItem("token");
-      const requestData = {
-        recipientEmail: newRequest.recipientEmail,
-        amount: parseFloat(newRequest.amount),
-        message: newRequest.message,
-      };
-
-      // Mock API call
-      console.log("Creating request:", requestData);
+      const amount = parseFloat(newRequest.amount);
+      if (isNaN(amount) || amount <= 0) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Please enter a valid amount",
+        });
+        return;
+      }
       
-      // Add to outgoing requests (mock)
-      const newRequestObj = {
-        id: Date.now(),
-        requesterId: 1,
-        recipientId: Math.floor(Math.random() * 100) + 2,
-        amount: requestData.amount,
-        message: requestData.message,
-        status: "pending" as const,
-        timestamp: new Date().toISOString(),
-        recipientName: newRequest.recipientEmail.split("@")[0],
-      };
-
-      setOutgoingRequests(prev => [newRequestObj, ...prev]);
+      let recipientId: number | null = null;
+      const recipient = searchResults.find(u => u.email === newRequest.recipientEmail);
+      
+      if (recipient) {
+        recipientId = recipient.id;
+      } else {
+        try {
+          const userResponse = await userApi.searchUsers(newRequest.recipientEmail);
+          const matchedUser = userResponse.find((u: User) => u.email === newRequest.recipientEmail);
+          if (matchedUser) {
+            recipientId = matchedUser.id;
+          }
+        } catch (err) {
+          console.error("Error searching for user:", err);
+        }
+      }
+      
+      if (!recipientId) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Recipient not found. Please enter a valid email address.",
+        });
+        return;
+      }
+      
+      await requestApi.createRequest({
+        requesterId: user?.id || 0,
+        recipientId,
+        amount,
+        message: newRequest.message || "",
+      });
+      
+      toast({
+        title: "Success",
+        description: "Request approved successfully",
+      });
       setShowCreateModal(false);
       setNewRequest({ recipientEmail: "", amount: "", message: "" });
-    } catch (error) {
+      setSearchQuery("");
+      setSearchResults([]);
+      
+      await fetchOutgoingRequests();
+    } catch (error: any) {
       console.error("Error creating request:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.response?.data?.message || "Failed to approve request",
+      });
+    }
+  };
+
+  const handleApproveRequest = async (requestId: number) => {
+    try {
+      await requestApi.approveRequest(requestId);
+      toast({
+        title: "Success",
+        description: "Request approved successfully",
+      });
+      await fetchIncomingRequests();
+    } catch (error: any) {
+      console.error("Error approving request:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.response?.data?.message || "Failed to approve request",
+      });
+    }
+  };
+
+  const handleCancelRequest = async (requestId: number) => {
+    try {
+      await requestApi.cancelRequest(requestId);
+      toast({
+        title: "Success",
+        description: "Request cancelled",
+      });
+      await fetchOutgoingRequests();
+    } catch (error: any) {
+      console.error("Error cancelling request:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.response?.data?.message || "Failed to cancel request",
+      });
     }
   };
 
@@ -180,7 +247,6 @@ export default function RequestMoneyPage() {
     try {
       const token = localStorage.getItem("token");
       
-      // Mock API call
       console.log(`${action}ing request:`, requestId);
       
       setIncomingRequests(prev =>
@@ -277,7 +343,7 @@ export default function RequestMoneyPage() {
 
   return (
     <DashboardLayout
-      userName={user.name}
+    userName={`${user.firstName} ${user.lastName}`}
       onLogout={handleLogout}
       notifications={notifications}
       onMarkAllNotificationsAsRead={() => {}}
@@ -401,7 +467,7 @@ export default function RequestMoneyPage() {
                           </Badge>
                         </div>
                         <p className="text-muted-foreground mb-1">
-                          From: <span className="font-medium">{request.requesterName}</span>
+                          From: <span className="font-medium">User {request.requesterId}</span>
                         </p>
                         {request.message && (
                           <p className="text-sm text-muted-foreground mb-2">
@@ -473,7 +539,7 @@ export default function RequestMoneyPage() {
                           </Badge>
                         </div>
                         <p className="text-muted-foreground mb-1">
-                          To: <span className="font-medium">{request.recipientName}</span>
+                          To: <span className="font-medium">User {request.recipientId}</span>
                         </p>
                         {request.message && (
                           <p className="text-sm text-muted-foreground mb-2">

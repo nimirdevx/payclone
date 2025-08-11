@@ -5,19 +5,15 @@ import { User2 } from "lucide-react"
 import { MobileSidebarToggle } from "@/components/mobile-sidebar-toggle"
 import { NotificationsDropdown } from "@/components/notification-dropdown"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { Notification } from "@/types" // Import from your types file
 
 interface HeaderProps {
   userName?: string
   showMobileSidebarToggle?: boolean
-  notifications?: {
-    id: number
-    userId: number
-    message: string
-    timestamp: string
-    read: boolean
-  }[]
+  notifications?: Notification[]
   onMarkAllNotificationsAsRead?: () => void
   onMarkAsRead?: (id: number) => void
+  onDeleteNotification?: (id: number) => void // Optional delete functionality
   className?: string
   fixed?: boolean
 }
@@ -28,6 +24,7 @@ export function Header({
   notifications = [],
   onMarkAllNotificationsAsRead,
   onMarkAsRead,
+  onDeleteNotification,
   className = "",
   fixed = true,
 }: HeaderProps) {
@@ -60,6 +57,7 @@ export function Header({
             notifications={notifications}
             onMarkAllAsRead={onMarkAllNotificationsAsRead}
             onMarkAsRead={onMarkAsRead}
+            onDeleteNotification={onDeleteNotification}
           />
         )}
   

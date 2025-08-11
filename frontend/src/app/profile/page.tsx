@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { User, Mail, Lock, Camera, Save, Edit } from "lucide-react";
+import { User as UserIcon, Mail, Lock, Camera, Save, Edit } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import {
   Dialog,
@@ -20,27 +20,33 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
-import api from "@/lib/api";
-
-interface User {
-  id: number;
-  name: string;
-  email: string;
-  profilePicture?: string;
-  joinDate?: string;
-}
+import { useToast } from "@/hooks/use-toast";
+import { User } from "@/types";
+import { authApi } from "@/lib/api-service";
 
 export default function ProfilePage() {
   const router = useRouter();
+  const { toast } = useToast();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [editForm, setEditForm] = useState({
-    name: "",
+    firstName: "",
+    lastName: "",
     email: "",
   });
+  
+  useEffect(() => {
+    if (user) {
+      setEditForm({
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+      });
+    }
+  }, [user]);
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: "",
     newPassword: "",
@@ -60,29 +66,16 @@ export default function ProfilePage() {
         return;
       }
 
-      const response = await api.get("/user/profile", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      setUser(response.data);
-      setEditForm({
-        name: response.data.name,
-        email: response.data.email,
-      });
+      const response = await authApi.getMe();
+      setUser(response);
     } catch (error) {
       console.error("Error fetching user profile:", error);
-      // Mock data for development
-      const mockUser = {
+      // Fallback to mock data for development
+      setUser({
         id: 1,
-        name: "John Doe",
+        firstName: "John",
+        lastName: "Doe",
         email: "john.doe@example.com",
-        profilePicture: "",
-        joinDate: "2023-01-15",
-      };
-      setUser(mockUser);
-      setEditForm({
-        name: mockUser.name,
-        email: mockUser.email,
       });
     } finally {
       setLoading(false);
@@ -96,7 +89,7 @@ export default function ProfilePage() {
       // Mock API call
       console.log("Updating profile:", editForm);
       
-      setUser(prev => prev ? { ...prev, ...editForm } : null);
+      setUser((prev: User | null) => prev ? { ...prev, ...editForm } : null);
       setEditing(false);
     } catch (error) {
       console.error("Error updating profile:", error);
@@ -105,7 +98,11 @@ export default function ProfilePage() {
 
   const handleChangePassword = async () => {
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      alert("New passwords don't match!");
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "New passwords don't match!",
+      });
       return;
     }
 
@@ -121,7 +118,10 @@ export default function ProfilePage() {
         confirmPassword: "",
       });
       setShowPasswordModal(false);
-      alert("Password changed successfully!");
+      toast({
+        title: "Success",
+        description: "Password changed successfully!",
+      });
     } catch (error) {
       console.error("Error changing password:", error);
     }
@@ -134,7 +134,7 @@ export default function ProfilePage() {
       const reader = new FileReader();
       reader.onload = (e) => {
         const result = e.target?.result as string;
-        setUser(prev => prev ? { ...prev, profilePicture: result } : null);
+        setUser((prev: User | null) => prev ? { ...prev, avatar: result } : null);
       };
       reader.readAsDataURL(file);
     }
@@ -258,7 +258,7 @@ export default function ProfilePage() {
 
   return (
     <DashboardLayout
-      userName={user.name}
+     userName={`${user.firstName} ${user.lastName}`}
       onLogout={handleLogout}
       notifications={notifications}
       onMarkAllNotificationsAsRead={() => {}}
@@ -269,7 +269,7 @@ export default function ProfilePage() {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <h1 className="text-3xl font-bold flex items-center gap-2">
-                <User className="h-8 w-8" />
+                <UserIcon className="h-8 w-8" />
                 Profile Settings
               </h1>
               <p className="text-muted-foreground">
@@ -286,9 +286,9 @@ export default function ProfilePage() {
               </CardHeader>
               <CardContent className="text-center space-y-4">
                 <Avatar className="h-32 w-32 mx-auto">
-                  <AvatarImage src={user.profilePicture} alt={user.name} />
+                  <AvatarImage src={user.avatar} alt={`${user.firstName} ${user.lastName}`} />
                   <AvatarFallback className="text-2xl">
-                    {user.name.split(" ").map(n => n[0]).join("").toUpperCase()}
+                    {user.firstName[0]}{user.lastName[0]}
                   </AvatarFallback>
                 </Avatar>
                 <div>
@@ -333,8 +333,15 @@ export default function ProfilePage() {
                     <Label htmlFor="name">Full Name</Label>
                     <Input
                       id="name"
-                      value={editing ? editForm.name : user.name}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+                      value={editing ? `${editForm.firstName} ${editForm.lastName}` : `${user.firstName} ${user.lastName}`}
+                      onChange={(e) => {
+                        const fullName = e.target.value.split(' ');
+                        setEditForm((prev: any) => ({ 
+                          ...prev, 
+                          firstName: fullName[0] || '', 
+                          lastName: fullName.slice(1).join(' ') || '' 
+                        }));
+                      }}
                       disabled={!editing}
                     />
                   </div>
@@ -344,24 +351,12 @@ export default function ProfilePage() {
                       id="email"
                       type="email"
                       value={editing ? editForm.email : user.email}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))}
+                      onChange={(e) => setEditForm((prev: any) => ({ ...prev, email: e.target.value }))}
                       disabled={!editing}
                     />
                   </div>
                 </div>
                 
-                {user.joinDate && (
-                  <div>
-                    <Label>Member Since</Label>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {new Date(user.joinDate).toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })}
-                    </p>
-                  </div>
-                )}
 
                 {editing && (
                   <div className="flex gap-2 pt-4">

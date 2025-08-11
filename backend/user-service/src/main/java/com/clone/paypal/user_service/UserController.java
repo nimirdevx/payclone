@@ -5,6 +5,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -16,6 +19,9 @@ public class UserController {
 
     @Autowired
     private PasswordEncoder passwordEncoder; // Inject the password encoder
+
+    @Autowired
+    private RestTemplate restTemplate;
 
     @PostMapping("/register")
     public ResponseEntity<User> registerUser(@RequestBody User user) {
@@ -39,7 +45,7 @@ public class UserController {
             User user = userOptional.get();
             if (passwordEncoder.matches(loginRequest.password, user.getPassword())) {
                 // For now, return a simple placeholder token. In a real app, this would be a securely generated JWT.
-                return ResponseEntity.ok(new LoginResponse("dummy-jwt-token-for-" + user.getId(), user.getId(), user.getName()));
+                return ResponseEntity.ok(new LoginResponse("dummy-jwt-token-for-" + user.getId(), user.getId(), user.getFullName()));
             }
         }
 
@@ -66,5 +72,40 @@ public class UserController {
             }
         }
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<User>> searchUsers(@RequestParam String q) {
+        List<User> users = userRepository.findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCaseOrEmailContainingIgnoreCase(q, q, q);
+        return ResponseEntity.ok(users);
+    }
+
+    @GetMapping("/analytics/{id}")
+    public ResponseEntity<?> getUserAnalytics(@PathVariable Long id) {
+        try {
+            // Fetch transactions from transaction service
+            String transactionServiceUrl = "http://transaction-service:8083/api/transactions/user/" + id;
+            ResponseEntity<Map> transactionResponse = restTemplate.getForEntity(transactionServiceUrl, Map.class);
+            
+            // Fetch wallet info from wallet service
+            String walletServiceUrl = "http://wallet-service:8082/api/wallets/user/" + id;
+            ResponseEntity<Map> walletResponse = restTemplate.getForEntity(walletServiceUrl, Map.class);
+            
+            // Create analytics response
+            Map<String, Object> analytics = Map.of(
+                "transactions", transactionResponse.getBody() != null ? transactionResponse.getBody() : Map.of(),
+                "wallet", walletResponse.getBody() != null ? walletResponse.getBody() : Map.of(),
+                "summary", Map.of(
+                    "totalTransactions", 0, // This would be calculated from actual data
+                    "totalSpent", 0,
+                    "totalReceived", 0
+                )
+            );
+            
+            return ResponseEntity.ok(analytics);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", "Failed to fetch user analytics"));
+        }
     }
 }

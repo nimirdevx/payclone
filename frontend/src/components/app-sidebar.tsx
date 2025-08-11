@@ -100,18 +100,6 @@ export function AppSidebar({ userName, onLogout }: AppSidebarProps) {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Notifications">
-                  <Link
-                    href="/notifications"
-                    prefetch={false}
-                    className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-paypal-accent/20"
-                  >
-                    <Bell className="h-5 w-5" />
-                    <span className="font-medium">Notifications</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="Request Money">
                   <Link
                     href="/request"

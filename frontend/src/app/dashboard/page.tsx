@@ -26,33 +26,12 @@ import {
 } from "@/components/ui/tooltip";
 import { formatDistanceToNowStrict } from "date-fns";
 import { QuickActivityChart } from "@/components/quick-activity-chart";
-import { EnhancedActivityChart } from "@/components/enhanced-activity-chart";
+import { RecentActivity } from "@/components/recent-activity";
 import { DashboardSkeleton } from "@/components/dashboard-skeleton";
 import { QuickActions } from "@/components/quick-actions";
 import { useToast } from "@/hooks/use-toast";
-
-interface User {
-  id: number;
-  name: string;
-  email: string;
-}
-
-interface Transaction {
-  id: number;
-  senderId: number;
-  recipientId: number;
-  amount: number;
-  status: string;
-  timestamp: string;
-}
-
-interface Notification {
-  id: number;
-  userId: number;
-  message: string;
-  timestamp: string;
-  read: boolean;
-}
+import { User, Transaction, Notification } from "@/types";
+import { authApi, transactionApi, walletApi, notificationApi } from "@/lib/api-service";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -86,8 +65,8 @@ export default function DashboardPage() {
 
   const fetchUser = async () => {
     try {
-      const response = await api.get("/users/me");
-      setUser(response.data);
+      const userData = await authApi.getMe();
+      setUser(userData);
     } catch (err: any) {
       console.error("Failed to fetch user details", err);
       setError("Failed to load user data.");
@@ -97,18 +76,25 @@ export default function DashboardPage() {
 
   const fetchBalance = async (userId: number) => {
     try {
-      const response = await api.get(`/wallets/user/${userId}`);
-      setBalance(response.data.balance);
+      const walletData = await walletApi.getUserWallet(userId);
+      if (walletData) {
+        setBalance(walletData.balance);
+      } else {
+        // Wallet doesn't exist yet, create a new one
+        console.log("No wallet found, creating a new one...");
+        const newWallet = await walletApi.createWallet({ userId, balance: 0, currency: 'INR' });
+        setBalance(newWallet.balance);
+      }
     } catch (err: any) {
-      console.error("Failed to fetch balance", err);
-      setError("Failed to load balance.");
+      console.error("Failed to fetch or create wallet", err);
+      setError("Failed to load wallet.");
     }
   };
 
   const fetchTransactions = async (userId: number) => {
     try {
-      const response = await api.get(`/transactions/user/${userId}`);
-      setTransactions(response.data);
+      const transactionData = await transactionApi.getUserTransactions(userId);
+      setTransactions(transactionData);
     } catch (err: any) {
       console.error("Failed to fetch transactions", err);
       setError("Failed to load transactions.");
@@ -117,12 +103,11 @@ export default function DashboardPage() {
 
   const fetchNotifications = async (userId: number) => {
     try {
-      const response = await api.get(`/notifications/user`, {
-        params: { id: userId },
-      });
-      setNotifications(response.data.notifications);
+      const notificationData = await notificationApi.getUserNotifications(userId);
+      setNotifications(notificationData);
     } catch (err: any) {
       console.error("Failed to fetch notifications", err);
+      setError("Failed to load notifications.");
     }
   };
 
@@ -212,10 +197,10 @@ export default function DashboardPage() {
           | "outline" = "default";
         let tooltipContent = "";
 
-        if (tx.status === "COMPLETED") {
+        if (tx.status === "completed") {
           statusColor = "text-paypal-accent";
           statusBadgeVariant = "default";
-        } else if (tx.status.startsWith("FAILED")) {
+        } else if (tx.status === "failed") {
           statusColor = "text-destructive";
           statusBadgeVariant = "destructive";
           tooltipContent = tx.status.replace("FAILED: ", "");
@@ -270,7 +255,7 @@ export default function DashboardPage() {
 
   return (
     <DashboardLayout
-      userName={user.name}
+      userName={`${user.firstName} ${user.lastName}`}
       onLogout={handleLogout}
       notifications={notifications}
       onMarkAllNotificationsAsRead={handleMarkAllNotificationsAsRead}
@@ -322,115 +307,9 @@ export default function DashboardPage() {
           onSendMoney={() => setShowSendMoneyModal(true)}
         />
 
-        {/* Enhanced Activity Chart */}
-        <div className="col-span-full">
-          <EnhancedActivityChart transactions={transactions} userId={user.id} />
+<div className="col-span-full">
+          <RecentActivity transactions={transactions} userId={user.id} />
         </div>
-
-        {/* Transactions Section */}
-        <Card
-          id="transactions"
-          className="col-span-full bg-card shadow-lg border border-border"
-        >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-lg font-semibold text-muted-foreground">
-              Transaction History
-            </CardTitle>
-            <Repeat2 className="h-5 w-5 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Party</TableHead>
-                  <TableHead className="hidden md:table-cell">Status</TableHead>
-                  <TableHead className="text-right">Time</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {processedTransactions.length > 0 ? (
-                  processedTransactions.map((tx) => (
-                    <TableRow key={tx.id}>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            tx.type === "DEBIT" ? "destructive" : "default"
-                          }
-                          className={
-                            tx.type === "DEBIT"
-                              ? "bg-destructive/10 text-destructive"
-                              : "bg-paypal-accent/10 text-paypal-accent"
-                          }
-                        >
-                          {tx.type}
-                        </Badge>
-                      </TableCell>
-                      <TableCell
-                        className={`font-semibold ${
-                          tx.type === "DEBIT"
-                            ? "text-destructive"
-                            : "text-paypal-accent"
-                        }`}
-                      >
-                        {tx.type === "DEBIT" ? "-" : "+"}
-                        {tx.amount.toFixed(2)}
-                      </TableCell>
-                      <TableCell>
-                        {tx.type === "DEBIT"
-                          ? `User ${tx.recipientId}`
-                          : `User ${tx.senderId}`}
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {tx.status.startsWith("FAILED") ? (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Badge
-                                  variant="destructive"
-                                  className="cursor-help bg-destructive/10 text-destructive"
-                                >
-                                  Failed
-                                </Badge>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>{tx.tooltipContent}</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        ) : (
-                          <Badge
-                            variant="default"
-                            className="bg-green-500/10 text-green-600"
-                          >
-                            {" "}
-                            {/* Assuming green for completed */}
-                            {tx.status}
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right text-sm text-muted-foreground">
-                        {formatDistanceToNowStrict(new Date(tx.timestamp), {
-                          addSuffix: true,
-                        })}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={5}
-                      className="text-center text-muted-foreground py-8"
-                    >
-                      No transactions yet.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
       </div>
       <AddMoneyModal
         show={showAddMoneyModal}

@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/notifications")
@@ -21,6 +22,24 @@ public class NotificationController {
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(500).body(Map.of("error", "Failed to fetch notifications"));
+        }
+    }
+
+    @PutMapping("/{id}/read")
+    public ResponseEntity<?> markNotificationAsRead(@PathVariable Long id) {
+        try {
+            Optional<Notification> notificationOptional = notificationRepository.findById(id);
+            if (notificationOptional.isPresent()) {
+                Notification notification = notificationOptional.get();
+                notification.setRead(true);
+                notificationRepository.save(notification);
+                return ResponseEntity.ok(Map.of("message", "Notification marked as read"));
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", "Failed to mark notification as read"));
         }
     }
 }

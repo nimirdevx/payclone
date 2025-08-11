@@ -15,15 +15,17 @@ public class Notification {
     private String message;
     private LocalDateTime timestamp;
     private boolean read;
+    private String type; // 'transaction', 'request', 'system'
 
     public Notification() {
     }
 
-    public Notification(Long userId, String message, LocalDateTime timestamp, boolean read) {
+    public Notification(Long userId, String message, LocalDateTime timestamp, boolean read, String type) {
         this.userId = userId;
         this.message = message;
         this.timestamp = timestamp;
         this.read = read;
+        this.type = type;
     }
 
     public Long getId() {
@@ -64,5 +66,13 @@ public class Notification {
 
     public void setRead(boolean read) {
         this.read = read;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 }
