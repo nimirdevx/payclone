@@ -5,6 +5,7 @@ import { cookies } from "next/headers"; // Import cookies from next/headers
 import "./globals.css";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "@/components/toaster";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -29,6 +30,7 @@ export default async function RootLayout({
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
         <SidebarProvider defaultOpen={defaultSidebarOpen}>
           {children}
+          <Toaster />
         </SidebarProvider>
       </ThemeProvider>
     </body>

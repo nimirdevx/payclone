@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { PayPalLogo } from "@/components/paypal-logo";
+import { LandingHeader } from "@/components/landing-header";
 import {
   DollarSign,
   ShieldCheck,
@@ -14,46 +14,11 @@ import {
 export default function LandingPage() {
   return (
     <div className="flex flex-col min-h-screen w-full bg-background text-foreground">
-      {" "}
-      {/* Added w-full */}
-      {/* Header */}
-      <header className="px-4 lg:px-6 h-14 flex items-center justify-between border-b bg-card w-full">
-        {" "}
-        {/* Added w-full */}
-        <Link
-          href="#"
-          className="flex items-center justify-center gap-2"
-          prefetch={false}
-        >
-          <PayPalLogo />
-          <span className="text-xl font-bold text-paypal-primary">
-            PayClone
-          </span>
-        </Link>
-        <nav className="hidden md:flex gap-4 sm:gap-6">
-          <Link
-            href="#features"
-            className="text-sm font-medium hover:underline underline-offset-4"
-            prefetch={false}
-          >
-            Features
-          </Link>
-          <Link
-            href="#cta"
-            className="text-sm font-medium hover:underline underline-offset-4"
-            prefetch={false}
-          >
-            Sign Up
-          </Link>
-        </nav>
-        <Button
-          asChild
-          className="bg-paypal-primary hover:bg-paypal-primary/90 text-paypal-primary-foreground"
-        >
-          <Link href="/login">Sign In</Link>
-        </Button>
-      </header>
-      <main className="flex-1 w-full">
+      {/* Fixed Header */}
+      <LandingHeader fixed={true} />
+      
+      {/* Main content with top padding to account for fixed header */}
+      <main className="flex-1 w-full pt-14">
         {" "}
         {/* Added w-full */}
         {/* Hero Section */}

@@ -1,13 +1,9 @@
 "use client"
 
 import type * as React from "react"
-import { User2, Sun, Moon } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { SidebarProvider } from "@/components/ui/sidebar"
-import { MobileSidebarToggle } from "@/components/mobile-sidebar-toggle"
-import { useTheme } from "next-themes"
-import { NotificationsDropdown } from "@/components/notification-dropdown"
-import { AppSidebar } from "@/components/app-sidebar" // Import the new AppSidebar
+import { AppSidebar } from "@/components/app-sidebar"
+import { Header } from "@/components/header"
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -21,7 +17,7 @@ interface DashboardLayoutProps {
     read: boolean
   }[]
   onMarkAllNotificationsAsRead: () => void
-  onMarkAsRead: (id: number) => void // Add this line
+  onMarkAsRead: (id: number) => void
 }
 
 export function DashboardLayout({
@@ -30,47 +26,32 @@ export function DashboardLayout({
   onLogout,
   notifications,
   onMarkAllNotificationsAsRead,
-  onMarkAsRead, // Add this line
+  onMarkAsRead,
 }: DashboardLayoutProps) {
-  const { theme, setTheme } = useTheme()
-
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen bg-background">
+      <div className="flex min-h-screen w-full bg-background">
         {/* Sidebar */}
         <AppSidebar userName={userName} onLogout={onLogout} />
-
-        {/* Main Content Area */}
-        <div className="flex flex-col flex-1 md:ml-[250px] transition-none">
-          {" "}
-          {/* Fixed margin-left */}
-          <header className="flex h-16 items-center gap-4 border-b bg-card px-6 lg:h-[72px] shadow-sm">
-            <MobileSidebarToggle />
-            <div className="flex-1 flex items-center justify-end gap-4">
-              {/* User Name and Avatar in Header */}
-              <div className="hidden md:flex items-center gap-2">
-                <User2 className="h-5 w-5 text-muted-foreground" />
-                <span className="font-medium text-foreground">{userName}</span>
-              </div>
-              {/* Notifications Dropdown */}
-              <NotificationsDropdown
-                notifications={notifications}
-                onMarkAllAsRead={onMarkAllNotificationsAsRead}
-                onMarkAsRead={onMarkAsRead} // Add this line
-              />
-              {/* Theme Toggle */}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                className="rounded-full text-foreground hover:bg-muted"
-              >
-                {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-                <span className="sr-only">Toggle theme</span>
-              </Button>
+        
+        {/* Main Content Wrapper - Add left margin to account for sidebar */}
+        <div className="flex flex-col flex-1 w-full min-w-0 ml-0 md:ml-[var(--sidebar-width,250px)]">
+          {/* Fixed Header */}
+          <Header
+            userName={userName}
+            showMobileSidebarToggle={true}
+            notifications={notifications}
+            onMarkAllNotificationsAsRead={onMarkAllNotificationsAsRead}
+            onMarkAsRead={onMarkAsRead}
+            fixed={true}
+          />
+          
+          {/* Main Content Area */}
+          <main className="flex-1 w-full pt-16 lg:pt-[72px]">
+            <div className="w-full h-full p-6 lg:p-8 bg-muted/20 min-h-[calc(100vh-4rem)] lg:min-h-[calc(100vh-72px)]">
+              {children}
             </div>
-          </header>
-          <main className="flex flex-1 flex-col gap-6 p-6 lg:p-8 bg-muted/20">{children}</main>
+          </main>
         </div>
       </div>
     </SidebarProvider>

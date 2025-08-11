@@ -34,32 +34,31 @@
   }
 
   .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
-
-    /* PayPal-like colors for dark mode */
-    --paypal-primary: 217 89% 29%; /* Keep primary dark blue */
-    --paypal-primary-foreground: 0 0% 98%; /* White */
-    --paypal-accent: 200 100% 36%; /* Keep vibrant blue */
-    --paypal-accent-foreground: 0 0% 98%; /* White */
-    --paypal-secondary: 240 3.7% 15.9%; /* Darker gray for secondary in dark mode */
+    --background: 210 20% 8%;          
+    --foreground: 200 15% 95%;         
+    --card: 205 18% 12%;               
+    --card-foreground: 200 15% 95%;
+    --popover: 205 18% 12%;
+    --popover-foreground: 200 15% 95%;
+    --primary: 200 15% 95%;
+    --primary-foreground: 210 20% 8%;
+    --secondary: 200 12% 20%;          
+    --secondary-foreground: 200 15% 95%;
+    --muted: 200 12% 20%;
+    --muted-foreground: 195 8% 72%;    
+    --accent: 200 12% 20%;
+    --accent-foreground: 200 15% 95%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 200 15% 95%;
+    --border: 200 12% 20%;
+    --input: 200 12% 20%;
+    --ring: 195 8% 72%;
+  
+    --paypal-primary: 217 89% 35%;
+    --paypal-primary-foreground: 0 0% 98%;
+    --paypal-accent: 195 70% 50%;      
+    --paypal-accent-foreground: 0 0% 98%;
+    --paypal-secondary: 200 12% 20%;
   }
 }
 
@@ -70,4 +69,56 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+.dark .bg-muted\/20 {
+  background-color: hsl(var(--muted) / 0.3);
+}
+
+.dark .bg-muted\/10 {
+  background-color: hsl(var(--muted) / 0.15);
+}
+
+.dark .bg-card {
+  background-color: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+}
+
+/* Theme-specific glow effects */
+.dark .shadow-lg {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+}
+
+/* Improved hover states */
+.dark .hover\:bg-muted:hover {
+  background-color: hsl(var(--muted) / 0.8);
+}
+
+.dark .hover\:bg-accent\/20:hover {
+  background-color: hsl(var(--accent) / 0.3);
+}
+
+/* Sidebar dark mode styles */
+.dark .bg-paypal-primary {
+  background-color: hsl(var(--paypal-primary));
+  border-right: 1px solid hsl(var(--border));
+}
+
+.dark .text-paypal-primary-foreground {
+  color: hsl(var(--paypal-primary-foreground));
+}
+
+.dark .border-paypal-primary-foreground\/20 {
+  border-color: hsl(var(--paypal-primary-foreground) / 0.2);
+}
+
+.dark .hover\:bg-paypal-accent\/20:hover {
+  background-color: hsl(var(--paypal-accent) / 0.2);
+  transition: background-color 0.2s ease;
+}
+
+.dark .hover\:bg-paypal-primary\/80:hover {
+  background-color: hsl(var(--paypal-primary) / 0.8);
+  transition: background-color 0.2s ease;
 }

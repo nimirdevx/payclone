@@ -26,7 +26,10 @@ import {
 } from "@/components/ui/tooltip";
 import { formatDistanceToNowStrict } from "date-fns";
 import { QuickActivityChart } from "@/components/quick-activity-chart";
-import { DashboardSkeleton } from "@/components/dashboard-skeleton"; // Import the new skeleton
+import { EnhancedActivityChart } from "@/components/enhanced-activity-chart";
+import { DashboardSkeleton } from "@/components/dashboard-skeleton";
+import { QuickActions } from "@/components/quick-actions";
+import { useToast } from "@/hooks/use-toast";
 
 interface User {
   id: number;
@@ -53,6 +56,7 @@ interface Notification {
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { toast } = useToast();
   const [balance, setBalance] = useState(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -131,8 +135,18 @@ export default function DashboardPage() {
         });
         fetchBalance(user.id);
         fetchTransactions(user.id);
+        toast({
+          title: "Money Added Successfully!",
+          description: `$${amount.toFixed(2)} has been added to your wallet.`,
+          variant: "success",
+        });
       } catch (err: any) {
         console.error("Failed to add money", err);
+        toast({
+          title: "Failed to Add Money",
+          description: "There was an error adding money to your wallet. Please try again.",
+          variant: "destructive",
+        });
         setError("Failed to add money.");
       }
     }
@@ -149,8 +163,18 @@ export default function DashboardPage() {
         fetchBalance(user.id);
         fetchTransactions(user.id);
         fetchNotifications(user.id);
+        toast({
+          title: "Money Sent Successfully!",
+          description: `$${amount.toFixed(2)} has been sent to ${recipientEmail}.`,
+          variant: "success",
+        });
       } catch (err: any) {
         console.error("Failed to send money", err);
+        toast({
+          title: "Failed to Send Money",
+          description: "There was an error sending money. Please check your balance and try again.",
+          variant: "destructive",
+        });
         setError("Failed to send money.");
       }
     }
@@ -252,11 +276,11 @@ export default function DashboardPage() {
       onMarkAllNotificationsAsRead={handleMarkAllNotificationsAsRead}
       onMarkAsRead={handleMarkNotificationAsRead}
     >
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {/* Wallet Card */}
         <Card
           id="wallet"
-          className="col-span-full md:col-span-2 lg:col-span-2 bg-card shadow-lg border border-border"
+          className="col-span-full md:col-span-2 lg:col-span-3 bg-card shadow-lg border border-border"
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-lg font-semibold text-muted-foreground">
@@ -279,7 +303,7 @@ export default function DashboardPage() {
                 className="bg-paypal-primary hover:bg-paypal-primary/90 text-paypal-primary-foreground px-6 py-3 text-base font-semibold rounded-lg shadow-md"
                 onClick={() => setShowAddMoneyModal(true)}
               >
-                <PlusCircle className="mr-2 h-5 w-5" /> Credit Wallet
+                <PlusCircle className="mr-2 h-5 w-5" /> Add Money
               </Button>
               <Button
                 variant="outline"
@@ -292,8 +316,16 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Quick Activity Chart */}
-        <QuickActivityChart transactions={transactions} userId={user.id} />
+        {/* Quick Actions */}
+        <QuickActions 
+          onAddMoney={() => setShowAddMoneyModal(true)}
+          onSendMoney={() => setShowSendMoneyModal(true)}
+        />
+
+        {/* Enhanced Activity Chart */}
+        <div className="col-span-full">
+          <EnhancedActivityChart transactions={transactions} userId={user.id} />
+        </div>
 
         {/* Transactions Section */}
         <Card

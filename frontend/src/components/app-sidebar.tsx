@@ -9,6 +9,8 @@ import {
   User2,
   CreditCard,
   BarChart,
+  Bell,
+  HandCoins,
 } from "lucide-react";
 import {
   Sidebar,
@@ -48,7 +50,7 @@ export function AppSidebar({ userName, onLogout }: AppSidebarProps) {
           className="flex items-center gap-3"
           prefetch={false}
         >
-          <PayPalLogo className="h-8 w-8 text-paypal-accent" />
+          <PayPalLogo className="h-8 w-8 mb-2 text-paypal-accent" />
           <span className="text-2xl font-extrabold text-paypal-primary-foreground">
             PayClone
           </span>
@@ -88,7 +90,7 @@ export function AppSidebar({ userName, onLogout }: AppSidebarProps) {
               <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="Transactions">
                   <Link
-                    href="/dashboard#transactions"
+                    href="/transactions"
                     prefetch={false}
                     className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-paypal-accent/20"
                   >
@@ -98,9 +100,33 @@ export function AppSidebar({ userName, onLogout }: AppSidebarProps) {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Notifications">
+                  <Link
+                    href="/notifications"
+                    prefetch={false}
+                    className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-paypal-accent/20"
+                  >
+                    <Bell className="h-5 w-5" />
+                    <span className="font-medium">Notifications</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Request Money">
+                  <Link
+                    href="/request"
+                    prefetch={false}
+                    className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-paypal-accent/20"
+                  >
+                    <HandCoins className="h-5 w-5" />
+                    <span className="font-medium">Request Money</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="Analytics">
                   <Link
-                    href="#"
+                    href="/analytics"
                     prefetch={false}
                     className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-paypal-accent/20"
                   >
@@ -120,14 +146,14 @@ export function AppSidebar({ userName, onLogout }: AppSidebarProps) {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Settings">
+                <SidebarMenuButton asChild tooltip="Profile">
                   <Link
-                    href="#"
+                    href="/profile"
                     prefetch={false}
                     className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-paypal-accent/20"
                   >
-                    <Settings className="h-5 w-5" />
-                    <span className="font-medium">Settings</span>
+                    <User2 className="h-5 w-5" />
+                    <span className="font-medium">Profile</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

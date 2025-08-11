@@ -3,11 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export function DashboardSkeleton() {
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-      {" "}
-      {/* Added grid classes */}
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
       {/* Wallet Card Skeleton */}
-      <Card className="col-span-full md:col-span-2 lg:col-span-2 bg-card shadow-lg border border-border">
+      <Card className="col-span-full md:col-span-2 lg:col-span-3 bg-card shadow-lg border border-border">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-lg font-semibold text-muted-foreground">
             Current Balance
@@ -23,8 +21,8 @@ export function DashboardSkeleton() {
           </div>
         </CardContent>
       </Card>
-      {/* Quick Activity Chart Skeleton */}
-      <Card className="col-span-full md:col-span-1 lg:col-span-1 bg-card shadow-lg border border-border">
+      {/* Quick Actions Skeleton */}
+      <Card className="col-span-full md:col-span-2 lg:col-span-1 bg-card shadow-lg border border-border">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-muted-foreground">
             Quick Activity
