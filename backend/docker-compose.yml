@@ -55,6 +55,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://host.docker.internal:3306/paypal_users
       SPRING_DATASOURCE_USERNAME: ${DB_USER}
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      SPRING_KAFKA_PRODUCER_BOOTSTRAP_SERVERS: kafka:29092
 
 
   wallet-service:

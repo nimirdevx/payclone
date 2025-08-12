@@ -17,14 +17,15 @@ public class KafkaConsumerService {
 
     @KafkaListener(topics = "notification_topic", groupId = "notification_group")
     public void consume(NotificationRequest notificationRequest) {
-        logger.info("Consumed Kafka message -> Sending notification to user {}: '{}'",
-                notificationRequest.getUserId(), notificationRequest.getMessage());
+        logger.info("Consumed Kafka message -> Sending notification to user {}: '{}' of type '{}'",
+                notificationRequest.getUserId(), notificationRequest.getMessage(), notificationRequest.getType());
 
         Notification notification = new Notification();
         notification.setUserId(notificationRequest.getUserId());
         notification.setMessage(notificationRequest.getMessage());
         notification.setTimestamp(LocalDateTime.now(ZoneId.of("Asia/Kolkata")));
         notification.setRead(false);
+        notification.setType(notificationRequest.getType()); // Set the notification type
         notificationRepository.save(notification);
     }
 }

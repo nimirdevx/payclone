@@ -2,6 +2,7 @@ package com.clone.paypal.notification_service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +23,17 @@ public class NotificationController {
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(500).body(Map.of("error", "Failed to fetch notifications"));
+        }
+    }
+
+    @GetMapping("/user/{userId}/unread-count")
+    public ResponseEntity<?> getUnreadNotificationCount(@PathVariable Long userId) {
+        try {
+            long unreadCount = notificationRepository.countByUserIdAndReadIsFalse(userId);
+            return ResponseEntity.ok(Map.of("unreadCount", unreadCount));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", "Failed to fetch unread notification count"));
         }
     }
 
@@ -69,5 +81,12 @@ public class NotificationController {
             e.printStackTrace();
             return ResponseEntity.status(500).body(Map.of("error", "Failed to delete notification"));
         }
+    }
+
+    @DeleteMapping("/user/{userId}")
+    @Transactional
+    public ResponseEntity<Void> deleteNotificationsByUserId(@PathVariable Long userId) {
+        notificationRepository.deleteByUserId(userId);
+        return ResponseEntity.ok().build();
     }
 }

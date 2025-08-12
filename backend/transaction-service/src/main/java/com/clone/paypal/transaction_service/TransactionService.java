@@ -17,12 +17,12 @@ public class TransactionService {
     private final String walletServiceUrl = "http://WALLET-SERVICE/api/wallets";
     private final String userServiceUrl = "http://USER-SERVICE/api/users";
 
-    public Transaction performTransaction(Long senderId, String recipientEmail, BigDecimal amount, String description) { // Add description to the method signature
+    public Transaction performTransaction(Long senderId, String recipientEmail, BigDecimal amount, String description) {
         Transaction transaction = new Transaction();
         transaction.setSenderId(senderId);
         transaction.setRecipientId(null);
         transaction.setAmount(amount);
-        transaction.setDescription(description); // Set the description
+        transaction.setDescription(description);
         transaction.setTimestamp(LocalDateTime.now(ZoneId.of("Asia/Kolkata")));
 
         User recipientUser = null;
@@ -50,10 +50,10 @@ public class TransactionService {
             transaction.setStatus("COMPLETED");
 
             String sentMsg = String.format("You sent %.2f to user %s.", amount.doubleValue(), recipientEmail);
-            kafkaProducerService.sendNotificationEvent(new NotificationRequest(senderId, sentMsg));
+            kafkaProducerService.sendNotificationEvent(new NotificationRequest(senderId, sentMsg, "Transaction"));
 
             String receivedMsg = String.format("You received %.2f from user %d.", amount.doubleValue(), senderId);
-            kafkaProducerService.sendNotificationEvent(new NotificationRequest(recipientId, receivedMsg));
+            kafkaProducerService.sendNotificationEvent(new NotificationRequest(recipientId, receivedMsg, "Transaction"));
         } catch (Exception e) {
             transaction.setStatus("FAILED: " + e.getMessage());
         }

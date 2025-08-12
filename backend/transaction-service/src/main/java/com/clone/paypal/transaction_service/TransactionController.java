@@ -3,6 +3,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import org.springframework.transaction.annotation.Transactional;
 
 @RestController
 @RequestMapping("/api/transactions")
@@ -33,5 +34,12 @@ public class TransactionController {
         return transactionRepository.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/user/{userId}")
+    @Transactional
+    public ResponseEntity<Void> deleteTransactionsByUserId(@PathVariable Long userId) {
+        transactionRepository.deleteBySenderIdOrRecipientId(userId, userId);
+        return ResponseEntity.ok().build();
     }
 }

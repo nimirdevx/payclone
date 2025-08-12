@@ -12,6 +12,11 @@ spring:
     hibernate:
       ddl-auto: update # Automatically creates/updates tables based on your code
     show-sql: true # Shows the SQL queries in the console, great for debugging
+  kafka:
+    producer:
+      bootstrap-servers: localhost:9092
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
 eureka:
   client:

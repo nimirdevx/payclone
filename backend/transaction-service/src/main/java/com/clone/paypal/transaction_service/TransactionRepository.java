@@ -5,4 +5,5 @@ import java.util.List;
 
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
     List<Transaction> findBySenderIdOrRecipientId(Long senderId, Long recipientId);
+    void deleteBySenderIdOrRecipientId(Long senderId, Long recipientId);
 }

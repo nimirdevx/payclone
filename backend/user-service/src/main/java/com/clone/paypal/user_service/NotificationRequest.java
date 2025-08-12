@@ -1,17 +1,17 @@
-package com.clone.paypal.transaction_service;
+package com.clone.paypal.user_service;
 
 public class NotificationRequest {
     private Long userId;
     private String message;
     private String type;
 
-    public NotificationRequest() {}
     public NotificationRequest(Long userId, String message, String type) {
         this.userId = userId;
         this.message = message;
         this.type = type;
     }
 
+    // Getters and Setters
     public Long getUserId() {
         return userId;
     }

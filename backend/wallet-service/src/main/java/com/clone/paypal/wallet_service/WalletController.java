@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
+import org.springframework.transaction.annotation.Transactional;
 
 @RestController
 @RequestMapping("/api/wallets")
@@ -52,8 +53,15 @@ public class WalletController {
 
         // Send notification
         String message = String.format("You added %.2f to your wallet.", request.getAmount().doubleValue());
-        kafkaProducerService.sendNotificationEvent(new NotificationRequest(request.getUserId(), message));
+        kafkaProducerService.sendNotificationEvent(new NotificationRequest(request.getUserId(), message, "Self Transfer"));
 
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/user/{userId}")
+    @Transactional
+    public ResponseEntity<Void> deleteWalletByUserId(@PathVariable Long userId) {
+        walletRepository.deleteByUserId(userId);
         return ResponseEntity.ok().build();
     }
 }

@@ -17,6 +17,9 @@ public class MoneyRequestController {
     @Autowired
     private MoneyRequestRepository moneyRequestRepository;
 
+    @Autowired
+    private KafkaProducerService kafkaProducerService;
+
     // DTO for creating money requests
     public static class CreateMoneyRequestDto {
         public Long requesterId;
@@ -38,6 +41,11 @@ public class MoneyRequestController {
             );
 
             MoneyRequest savedRequest = moneyRequestRepository.save(moneyRequest);
+
+            // Send notification
+            String message = String.format("You have a new money request for %.2f.", requestDto.amount);
+            kafkaProducerService.sendNotificationEvent(new NotificationRequest(requestDto.recipientId, message, "Money Request"));
+
             return ResponseEntity.ok(Map.of("message", "Money request created successfully", "request", savedRequest));
         } catch (Exception e) {
             e.printStackTrace();
@@ -65,6 +73,11 @@ public class MoneyRequestController {
                 if ("pending".equals(request.getStatus())) {
                     request.setStatus("approved");
                     moneyRequestRepository.save(request);
+
+                    // Notify requester
+                    String requesterMessage = String.format("Your money request for %.2f was approved.", request.getAmount());
+                    kafkaProducerService.sendNotificationEvent(new NotificationRequest(request.getRequesterId(), requesterMessage, "Money Request"));
+                    
                     return ResponseEntity.ok(Map.of("message", "Money request approved successfully"));
                 } else {
                     return ResponseEntity.badRequest().body(Map.of("error", "Request is not in pending status"));
@@ -87,6 +100,11 @@ public class MoneyRequestController {
                 if ("pending".equals(request.getStatus())) {
                     request.setStatus("rejected");
                     moneyRequestRepository.save(request);
+
+                    // Notify requester
+                    String requesterMessage = String.format("Your money request for %.2f was rejected.", request.getAmount());
+                    kafkaProducerService.sendNotificationEvent(new NotificationRequest(request.getRequesterId(), requesterMessage, "Money Request"));
+
                     return ResponseEntity.ok(Map.of("message", "Money request rejected successfully"));
                 } else {
                     return ResponseEntity.badRequest().body(Map.of("error", "Request is not in pending status"));
@@ -108,6 +126,11 @@ public class MoneyRequestController {
                 MoneyRequest request = requestOptional.get();
                 if ("pending".equals(request.getStatus())) {
                     moneyRequestRepository.delete(request);
+
+                    // Notify recipient
+                    String recipientMessage = String.format("A money request for %.2f was canceled.", request.getAmount());
+                    kafkaProducerService.sendNotificationEvent(new NotificationRequest(request.getRecipientId(), recipientMessage, "Money Request"));
+
                     return ResponseEntity.ok(Map.of("message", "Money request cancelled successfully"));
                 } else {
                     return ResponseEntity.badRequest().body(Map.of("error", "Only pending requests can be cancelled"));

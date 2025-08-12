@@ -22,7 +22,7 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable()) // Disable CSRF for stateless APIs
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/users/register", "/api/users/login", "/api/users/me", "/api/users/email/**", "/api/users/search", "/api/users/analytics/**", "/api/requests/**").permitAll() // Allow public access
+                        .requestMatchers("/api/users/register", "/api/users/login", "/api/users/me", "/api/users/email/**", "/api/users/search", "/api/users/analytics/**", "/api/requests/**", "/api/users/**").permitAll() // Allow public access
                         .anyRequest().permitAll() // Allow all requests for now (you can secure later)
                 )
                 .cors(cors -> cors.disable()) // Disable CORS (handled by API Gateway)
