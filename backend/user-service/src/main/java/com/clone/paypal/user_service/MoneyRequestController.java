@@ -3,6 +3,7 @@ package com.clone.paypal.user_service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.LocalDateTime;
@@ -18,7 +19,13 @@ public class MoneyRequestController {
     private MoneyRequestRepository moneyRequestRepository;
 
     @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
     private KafkaProducerService kafkaProducerService;
+
+    @Autowired
+    private RestTemplate restTemplate;
 
     // DTO for creating money requests
     public static class CreateMoneyRequestDto {
@@ -71,14 +78,39 @@ public class MoneyRequestController {
             if (requestOptional.isPresent()) {
                 MoneyRequest request = requestOptional.get();
                 if ("pending".equals(request.getStatus())) {
+
+                    // --- New Transaction Logic ---
+                    // 1. Get requester's email to send the money to
+                    Optional<User> requesterOptional = userRepository.findById(request.getRequesterId());
+                    if (!requesterOptional.isPresent()) {
+                        return ResponseEntity.status(500).body(Map.of("error", "Requester not found"));
+                    }
+                    String requesterEmail = requesterOptional.get().getEmail();
+
+                    // 2. Create and send the transaction request
+                    TransactionRequest transaction = new TransactionRequest(
+                            request.getRecipientId(), // The person who approves is the sender
+                            requesterEmail,           // The person who requested is the recipient
+                            request.getAmount(),
+                            "Payment for money request: " + request.getMessage()
+                    );
+
+                    try {
+                        restTemplate.postForObject("http://TRANSACTION-SERVICE/api/transactions", transaction, Map.class);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        return ResponseEntity.status(500).body(Map.of("error", "Transaction failed: " + e.getMessage()));
+                    }
+
+                    // 3. Update request status
                     request.setStatus("approved");
                     moneyRequestRepository.save(request);
 
-                    // Notify requester
+                    // 4. Notify requester
                     String requesterMessage = String.format("Your money request for %.2f was approved.", request.getAmount());
-                    kafkaProducerService.sendNotificationEvent(new NotificationRequest(request.getRequesterId(), requesterMessage, "Money Request"));
-                    
-                    return ResponseEntity.ok(Map.of("message", "Money request approved successfully"));
+                    kafkaProducerService.sendNotificationEvent(new NotificationRequest(request.getRequesterId(), requesterMessage, "Money Request Approved"));
+
+                    return ResponseEntity.ok(Map.of("message", "Money request approved and transaction completed."));
                 } else {
                     return ResponseEntity.badRequest().body(Map.of("error", "Request is not in pending status"));
                 }
@@ -103,7 +135,7 @@ public class MoneyRequestController {
 
                     // Notify requester
                     String requesterMessage = String.format("Your money request for %.2f was rejected.", request.getAmount());
-                    kafkaProducerService.sendNotificationEvent(new NotificationRequest(request.getRequesterId(), requesterMessage, "Money Request"));
+                    kafkaProducerService.sendNotificationEvent(new NotificationRequest(request.getRequesterId(), requesterMessage, "Money Request Rejected"));
 
                     return ResponseEntity.ok(Map.of("message", "Money request rejected successfully"));
                 } else {
@@ -129,7 +161,7 @@ public class MoneyRequestController {
 
                     // Notify recipient
                     String recipientMessage = String.format("A money request for %.2f was canceled.", request.getAmount());
-                    kafkaProducerService.sendNotificationEvent(new NotificationRequest(request.getRecipientId(), recipientMessage, "Money Request"));
+                    kafkaProducerService.sendNotificationEvent(new NotificationRequest(request.getRecipientId(), recipientMessage, "Money Request Canceled"));
 
                     return ResponseEntity.ok(Map.of("message", "Money request cancelled successfully"));
                 } else {

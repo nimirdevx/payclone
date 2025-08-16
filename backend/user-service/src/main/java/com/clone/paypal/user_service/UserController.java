@@ -27,6 +27,11 @@ public class UserController {
     public ResponseEntity<User> registerUser(@RequestBody User user) {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         User savedUser = userRepository.save(user);
+
+        restTemplate.postForObject("http://WALLET-SERVICE/api/wallets",
+                new WalletCreationRequest(savedUser.getId()),
+                Map.class);
+
         return ResponseEntity.ok(savedUser);
     }
 

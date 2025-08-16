@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 interface SendMoneyModalProps {
   show: boolean;
   handleClose: () => void;
-  handleSendMoney: (recipientEmail: string, amount: number) => void;
+  handleSendMoney: (recipientEmail: string, amount: number, description: string) => void;
 }
 
 export function SendMoneyModal({
@@ -25,14 +25,16 @@ export function SendMoneyModal({
 }: SendMoneyModalProps) {
   const [recipientEmail, setRecipientEmail] = useState("");
   const [amount, setAmount] = useState("");
+  const [description, setDescription] = useState("");
   const quickAmounts = [500, 5000, 50000];
 
   const handleSubmit = () => {
     const numAmount = Number.parseFloat(amount);
     if (recipientEmail && !isNaN(numAmount) && numAmount > 0) {
-      handleSendMoney(recipientEmail, numAmount);
+      handleSendMoney(recipientEmail, numAmount, description);
       setRecipientEmail("");
       setAmount("");
+      setDescription("");
       handleClose();
     }
   };
@@ -72,6 +74,18 @@ export function SendMoneyModal({
               className="col-span-3"
               placeholder="e.g., 50.00"
               min="0"
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="description" className="text-right">
+              Note
+            </Label>
+            <Input
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="col-span-3"
+              placeholder="(Optional)"
             />
           </div>
           <div className="flex flex-wrap gap-2 justify-end">

@@ -11,6 +11,29 @@ import {
   UserAnalytics 
 } from '@/types';
 
+// A helper function to safely extract userId from the dummy token
+const getUserIdFromToken = (token: string): number | null => {
+  if (token.startsWith("dummy-jwt-token-for-")) {
+    try {
+      return parseInt(token.replace("dummy-jwt-token-for-", ""), 10);
+    } catch (e) {
+      console.error("Could not parse user ID from dummy token", e);
+      return null;
+    }
+  }
+  // If a real JWT is ever used, the decoding logic would go here
+  // For now, we only support the dummy token
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.id || payload.sub;
+  } catch (e) {
+    // This will catch the 'atob' error for the dummy token and prevent the crash
+    console.warn("Token is not a standard JWT. Falling back to dummy token parsing.");
+    return null;
+  }
+};
+
+
 // Auth API
 export const authApi = {
   login: async (credentials: LoginRequest): Promise<LoginResponse> => {
@@ -49,6 +72,16 @@ export const userApi = {
   getUserAnalytics: async (id: number): Promise<UserAnalytics> => {
     const response = await api.get(`/users/analytics/${id}`);
     return response.data;
+  },
+
+  changePassword: async (userId: number, data: any): Promise<any> => {
+    const response = await api.put(`/users/${userId}/password`, data);
+    return response.data;
+  },
+
+  deleteUser: async (userId: number): Promise<any> => {
+    const response = await api.delete(`/users/${userId}`);
+    return response.data;
   }
 };
 
@@ -61,31 +94,29 @@ export const requestApi = {
 
   getUserRequests: async (userId: number): Promise<MoneyRequest[]> => {
     const response = await api.get(`/requests/user/${userId}`);
-    return response.data;
+    return response.data.requests;
   },
 
   getIncomingRequests: async (): Promise<MoneyRequest[]> => {
     const token = localStorage.getItem('token');
     if (!token) throw new Error('No token found');
     
-    // Decode token to get user ID (simple implementation)
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    const userId = payload.id || payload.sub;
+    const userId = getUserIdFromToken(token);
+    if (!userId) throw new Error('Invalid token format');
     
     const response = await api.get(`/requests/user/${userId}`);
-    return response.data.filter((req: MoneyRequest) => req.recipientId === userId);
+    return response.data.requests.filter((req: MoneyRequest) => req.recipientId === userId);
   },
 
   getOutgoingRequests: async (): Promise<MoneyRequest[]> => {
     const token = localStorage.getItem('token');
     if (!token) throw new Error('No token found');
     
-    // Decode token to get user ID (simple implementation)
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    const userId = payload.id || payload.sub;
+    const userId = getUserIdFromToken(token);
+    if (!userId) throw new Error('Invalid token format');
     
     const response = await api.get(`/requests/user/${userId}`);
-    return response.data.filter((req: MoneyRequest) => req.requesterId === userId);
+    return response.data.requests.filter((req: MoneyRequest) => req.requesterId === userId);
   },
 
   approveRequest: async (requestId: number): Promise<MoneyRequest> => {
@@ -113,10 +144,23 @@ export const notificationApi = {
 
   markAsRead: async (notificationId: number): Promise<void> => {
     await api.put(`/notifications/${notificationId}/read`);
-  }
+  },
+
+  markAllAsRead: async (userId: number): Promise<void> => {
+    await api.put(`/notifications/user/${userId}/read-all`);
+  },
+
+  deleteNotification: async (notificationId: number): Promise<void> => {
+    await api.delete(`/notifications/${notificationId}`);
+  },
+
+  getUnreadCount: async (userId: number): Promise<{ unreadCount: number }> => {
+    const response = await api.get(`/notifications/user/${userId}/unread-count`);
+    return response.data;
+  },
 };
 
-// Transaction API (existing endpoints)
+// Transaction API
 export const transactionApi = {
   getUserTransactions: async (userId: number): Promise<Transaction[]> => {
     const response = await api.get(`/transactions/user/${userId}`);
@@ -124,7 +168,7 @@ export const transactionApi = {
   },
 
   createTransaction: async (transactionData: any): Promise<Transaction> => {
-    const response = await api.post('/transactions/send', transactionData);
+    const response = await api.post('/transactions', transactionData);
     return response.data;
   }
 };
@@ -143,8 +187,8 @@ export const walletApi = {
     }
   },
 
-  createWallet: async (walletData: { userId: number; balance: number; currency: string }): Promise<any> => {
-    const response = await api.post('/wallets', walletData);
+  createWallet: async (walletData: { userId: number }): Promise<any> => {
+    const response = await api.post('/wallets', { userId: walletData.userId });
     return response.data;
   },
 

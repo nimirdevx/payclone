@@ -34,7 +34,6 @@ export default function RegisterPage() {
     
     setLoading(true);
     try {
-      console.log("Attempting registration for:", email);
       await authApi.register({
         firstName: firstName.trim(),
         lastName: lastName.trim(),

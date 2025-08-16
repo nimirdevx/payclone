@@ -16,6 +16,7 @@ interface HeaderProps {
   onDeleteNotification?: (id: number) => void // Optional delete functionality
   className?: string
   fixed?: boolean
+  unreadCount: number;
 }
 
 export function Header({
@@ -27,6 +28,7 @@ export function Header({
   onDeleteNotification,
   className = "",
   fixed = true,
+  unreadCount,
 }: HeaderProps) {
   const baseClasses = "flex h-16 items-center gap-4 border-b bg-card px-6 lg:h-[72px] shadow-sm z-50"
   // For dashboard pages with sidebar, header should start after sidebar (250px width)
@@ -55,6 +57,7 @@ export function Header({
         {onMarkAllNotificationsAsRead && onMarkAsRead && (
           <NotificationsDropdown
             notifications={notifications}
+            unreadCount={unreadCount} // Pass down the prop
             onMarkAllAsRead={onMarkAllNotificationsAsRead}
             onMarkAsRead={onMarkAsRead}
             onDeleteNotification={onDeleteNotification}

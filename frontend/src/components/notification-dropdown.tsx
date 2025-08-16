@@ -6,20 +6,16 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatDistanceToNowStrict } from "date-fns";
 import { cn } from "@/lib/utils";
-
-// Import from your types file instead of defining here
 import { Notification } from '@/types';
 
 interface NotificationsDropdownProps {
   notifications: Notification[];
+  unreadCount: number;
   onMarkAllAsRead: () => void;
   onMarkAsRead: (id: number) => void;
   onDeleteNotification?: (id: number) => void;
@@ -27,11 +23,11 @@ interface NotificationsDropdownProps {
 
 export function NotificationsDropdown({
   notifications,
+  unreadCount,
   onMarkAllAsRead,
   onMarkAsRead,
   onDeleteNotification,
 }: NotificationsDropdownProps) {
-  const unreadCount = notifications.filter((n) => !n.read).length;
 
   const getNotificationIcon = (type: string | null | undefined) => {
     switch (type) {
@@ -42,7 +38,7 @@ export function NotificationsDropdown({
       case "system":
         return "⚙️";
       default:
-        return "💰"; // Default to transaction icon for null/undefined types
+        return "🔔";
     }
   };
 
@@ -55,7 +51,7 @@ export function NotificationsDropdown({
       case "system":
         return "System";
       default:
-        return "Transaction"; // Default label
+        return "Notification";
     }
   };
 
@@ -118,7 +114,7 @@ export function NotificationsDropdown({
         <ScrollArea className="h-[400px]">
           {notifications.length > 0 ? (
             <div className="p-2">
-              {notifications.map((notification, index) => (
+              {notifications.map((notification) => (
                 <div
                   key={notification.id}
                   className={cn(
@@ -133,10 +129,7 @@ export function NotificationsDropdown({
                       {getNotificationIcon(notification.type)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={cn(
-                        "text-sm leading-relaxed",
-                        !notification.read ? "font-medium" : "font-normal"
-                      )}>
+                      <p className={cn("text-sm leading-relaxed", !notification.read ? "font-medium" : "font-normal")}>
                         {notification.message}
                       </p>
                       <div className="flex items-center gap-2 mt-2">
@@ -144,37 +137,19 @@ export function NotificationsDropdown({
                           {getNotificationTypeLabel(notification.type)}
                         </Badge>
                         <span className="text-xs text-muted-foreground">
-                          {formatDistanceToNowStrict(new Date(notification.timestamp), {
-                            addSuffix: true,
-                          })}
+                          {formatDistanceToNowStrict(new Date(notification.timestamp), { addSuffix: true })}
                         </span>
                       </div>
                     </div>
                     
-                    {/* Action buttons - visible on hover or for unread */}
-                    <div className={cn(
-                      "flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity",
-                      !notification.read && "opacity-100"
-                    )}>
+                    <div className={cn("flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity", !notification.read && "opacity-100")}>
                       {!notification.read && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={(e) => handleMarkAsRead(notification.id, e)}
-                          className="h-7 w-7 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-100"
-                          title="Mark as read"
-                        >
+                        <Button size="sm" variant="ghost" onClick={(e) => handleMarkAsRead(notification.id, e)} className="h-7 w-7 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-100" title="Mark as read">
                           <Check className="h-3 w-3" />
                         </Button>
                       )}
                       {onDeleteNotification && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={(e) => handleDelete(notification.id, e)}
-                          className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-100"
-                          title="Delete notification"
-                        >
+                        <Button size="sm" variant="ghost" onClick={(e) => handleDelete(notification.id, e)} className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-100" title="Delete notification">
                           <Trash2 className="h-3 w-3" />
                         </Button>
                       )}
@@ -187,9 +162,7 @@ export function NotificationsDropdown({
             <div className="p-8 text-center">
               <Bell className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
               <h3 className="font-medium text-sm mb-1">No notifications</h3>
-              <p className="text-xs text-muted-foreground">
-                You're all caught up!
-              </p>
+              <p className="text-xs text-muted-foreground">You're all caught up!</p>
             </div>
           )}
         </ScrollArea>

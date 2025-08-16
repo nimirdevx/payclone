@@ -4,20 +4,17 @@ import type * as React from "react"
 import { SidebarProvider } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
 import { Header } from "@/components/header"
+import { Notification } from "@/types"
 
 interface DashboardLayoutProps {
   children: React.ReactNode
   userName: string
   onLogout: () => void
-  notifications: {
-    id: number
-    userId: number
-    message: string
-    timestamp: string
-    read: boolean
-  }[]
+  notifications: Notification[]
+  unreadCount: number
   onMarkAllNotificationsAsRead: () => void
   onMarkAsRead: (id: number) => void
+  onDeleteNotification: (id: number) => void
 }
 
 export function DashboardLayout({
@@ -25,8 +22,10 @@ export function DashboardLayout({
   userName,
   onLogout,
   notifications,
+  unreadCount,
   onMarkAllNotificationsAsRead,
   onMarkAsRead,
+  onDeleteNotification,
 }: DashboardLayoutProps) {
   return (
     <SidebarProvider>
@@ -34,15 +33,17 @@ export function DashboardLayout({
         {/* Sidebar */}
         <AppSidebar userName={userName} onLogout={onLogout} />
         
-        {/* Main Content Wrapper - Add left margin to account for sidebar */}
+        {/* Main Content Wrapper */}
         <div className="flex flex-col flex-1 w-full min-w-0 ml-0 md:ml-[var(--sidebar-width,250px)]">
           {/* Fixed Header */}
           <Header
             userName={userName}
             showMobileSidebarToggle={true}
             notifications={notifications}
+            unreadCount={unreadCount}
             onMarkAllNotificationsAsRead={onMarkAllNotificationsAsRead}
             onMarkAsRead={onMarkAsRead}
+            onDeleteNotification={onDeleteNotification}
             fixed={true}
           />
           

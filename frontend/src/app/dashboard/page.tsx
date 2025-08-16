@@ -4,28 +4,10 @@ import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Send, Wallet, Repeat2 } from "lucide-react";
+import { PlusCircle, Send, Wallet } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { AddMoneyModal } from "@/components/add-money-modal";
 import { SendMoneyModal } from "@/components/send-money-modal";
-import api from "@/lib/api";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { formatDistanceToNowStrict } from "date-fns";
-import { QuickActivityChart } from "@/components/quick-activity-chart";
 import { RecentActivity } from "@/components/recent-activity";
 import { DashboardSkeleton } from "@/components/dashboard-skeleton";
 import { QuickActions } from "@/components/quick-actions";
@@ -39,6 +21,7 @@ export default function DashboardPage() {
   const [balance, setBalance] = useState(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [user, setUser] = useState<User | null>(null);
   const [showAddMoneyModal, setShowAddMoneyModal] = useState(false);
   const [showSendMoneyModal, setShowSendMoneyModal] = useState(false);
@@ -59,6 +42,7 @@ export default function DashboardPage() {
       fetchBalance(user.id);
       fetchTransactions(user.id);
       fetchNotifications(user.id);
+      fetchUnreadCount(user.id);
       setLoading(false);
     }
   }, [user]);
@@ -80,9 +64,7 @@ export default function DashboardPage() {
       if (walletData) {
         setBalance(walletData.balance);
       } else {
-        // Wallet doesn't exist yet, create a new one
-        console.log("No wallet found, creating a new one...");
-        const newWallet = await walletApi.createWallet({ userId, balance: 0, currency: 'INR' });
+        const newWallet = await walletApi.createWallet({ userId });
         setBalance(newWallet.balance);
       }
     } catch (err: any) {
@@ -107,74 +89,92 @@ export default function DashboardPage() {
       setNotifications(notificationData);
     } catch (err: any) {
       console.error("Failed to fetch notifications", err);
-      setError("Failed to load notifications.");
+    }
+  };
+
+  const fetchUnreadCount = async (userId: number) => {
+    try {
+      const data = await notificationApi.getUnreadCount(userId);
+      setUnreadCount(data.unreadCount);
+    } catch (err) {
+      console.error("Failed to fetch unread count", err);
     }
   };
 
   const handleAddMoney = async (amount: number) => {
     if (amount && user) {
       try {
-        await api.post("/wallets/credit", {
-          userId: user.id,
-          amount: Number.parseFloat(amount.toString()),
-        });
-        fetchBalance(user.id);
-        fetchTransactions(user.id);
-        toast({
-          title: "Money Added Successfully!",
-          description: `$${amount.toFixed(2)} has been added to your wallet.`,
-          variant: "success",
-        });
-      } catch (err: any) {
-        console.error("Failed to add money", err);
-        toast({
-          title: "Failed to Add Money",
-          description: "There was an error adding money to your wallet. Please try again.",
-          variant: "destructive",
-        });
-        setError("Failed to add money.");
-      }
-    }
-  };
-
-  const handleSendMoney = async (recipientEmail: string, amount: number) => {
-    if (recipientEmail && amount && user) {
-      try {
-        await api.post("/transactions", {
-          senderId: user.id,
-          recipientEmail,
-          amount: Number.parseFloat(amount.toString()),
-        });
+        await walletApi.addMoney(user.id, amount);
         fetchBalance(user.id);
         fetchTransactions(user.id);
         fetchNotifications(user.id);
-        toast({
-          title: "Money Sent Successfully!",
-          description: `$${amount.toFixed(2)} has been sent to ${recipientEmail}.`,
-          variant: "success",
-        });
+        fetchUnreadCount(user.id);
+        toast({ title: "Money Added Successfully!", description: `₹${amount.toFixed(2)} has been added to your wallet.`, variant: "success" });
       } catch (err: any) {
-        console.error("Failed to send money", err);
-        toast({
-          title: "Failed to Send Money",
-          description: "There was an error sending money. Please check your balance and try again.",
-          variant: "destructive",
-        });
-        setError("Failed to send money.");
+        console.error("Failed to add money", err);
+        toast({ title: "Failed to Add Money", description: "There was an error adding money. Please try again.", variant: "destructive" });
       }
     }
   };
 
-  const handleMarkAllNotificationsAsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-    // In a real application, you would send an API request here to mark them as read on the server.
+  const handleSendMoney = async (recipientEmail: string, amount: number, description: string) => {
+    if (recipientEmail && amount && user) {
+      try {
+        await transactionApi.createTransaction({ senderId: user.id, recipientEmail, amount, description });
+        fetchBalance(user.id);
+        fetchTransactions(user.id);
+        fetchNotifications(user.id);
+        fetchUnreadCount(user.id);
+        toast({ title: "Money Sent Successfully!", description: `₹${amount.toFixed(2)} has been sent to ${recipientEmail}.`, variant: "success" });
+      } catch (err: any) {
+        console.error("Failed to send money", err);
+        toast({ title: "Failed to Send Money", description: err.response?.data?.message || "Check your balance and try again.", variant: "destructive" });
+      }
+    }
+  };
+  
+  const handleMarkAllNotificationsAsRead = async () => {
+    if (!user) return;
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    setUnreadCount(0);
+    try {
+      await notificationApi.markAllAsRead(user.id);
+    } catch (error) {
+      if (user) {
+        fetchNotifications(user.id);
+        fetchUnreadCount(user.id);
+      }
+    }
   };
 
-  const handleMarkNotificationAsRead = (id: number) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
-    );
-    // In a real application, you would send an API request here to mark it as read on the server.
+  const handleMarkNotificationAsRead = async (id: number) => {
+    if (!user) return;
+    const isUnread = notifications.find(n => n.id === id)?.read === false;
+    setNotifications(prev => prev.map(n => (n.id === id ? { ...n, read: true } : n)));
+    if (isUnread) setUnreadCount(prev => Math.max(0, prev - 1));
+    try {
+      await notificationApi.markAsRead(id);
+    } catch (error) {
+      if (user) {
+        fetchNotifications(user.id);
+        fetchUnreadCount(user.id);
+      }
+    }
+  };
+
+  const handleDeleteNotification = async (id: number) => {
+    if (!user) return;
+    const isUnread = notifications.find(n => n.id === id)?.read === false;
+    setNotifications(prev => prev.filter(n => n.id !== id));
+    if (isUnread) setUnreadCount(prev => Math.max(0, prev - 1));
+    try {
+      await notificationApi.deleteNotification(id);
+    } catch (error) {
+      if (user) {
+        fetchNotifications(user.id);
+        fetchUnreadCount(user.id);
+      }
+    }
   };
 
   const handleLogout = () => {
@@ -182,74 +182,19 @@ export default function DashboardPage() {
     router.push("/login");
   };
 
-  // Memoize processed transactions for display
-  const processedTransactions = useMemo(() => {
-    if (!user) return [];
-    return transactions
-      .map((tx) => {
-        const isSender = tx.senderId === user.id;
-        const type = isSender ? "DEBIT" : "CREDIT";
-        let statusColor = "text-muted-foreground";
-        let statusBadgeVariant:
-          | "default"
-          | "destructive"
-          | "secondary"
-          | "outline" = "default";
-        let tooltipContent = "";
-
-        if (tx.status === "completed") {
-          statusColor = "text-paypal-accent";
-          statusBadgeVariant = "default";
-        } else if (tx.status === "failed") {
-          statusColor = "text-destructive";
-          statusBadgeVariant = "destructive";
-          tooltipContent = tx.status.replace("FAILED: ", "");
-        } else {
-          statusColor = "text-orange-500";
-          statusBadgeVariant = "secondary"; // Use secondary for pending/other
-        }
-
-        return {
-          ...tx,
-          type,
-          statusColor,
-          statusBadgeVariant,
-          tooltipContent,
-        };
-      })
-      .sort(
-        (a, b) =>
-          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-      );
-  }, [transactions, user]);
-
-  if (loading) {
+  if (loading || !user) {
     return (
       <DashboardLayout
         userName="Loading..."
-        onLogout={() => {}}
+        onLogout={handleLogout}
         notifications={[]}
+        unreadCount={0}
         onMarkAllNotificationsAsRead={() => {}}
-        onMarkAsRead={() => {}} // Pass a dummy function to satisfy the prop requirement
+        onMarkAsRead={() => {}}
+        onDeleteNotification={() => {}}
       >
         <DashboardSkeleton />
       </DashboardLayout>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background text-destructive">
-        Error: {error}
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
-        Redirecting...
-      </div>
     );
   }
 
@@ -258,69 +203,35 @@ export default function DashboardPage() {
       userName={`${user.firstName} ${user.lastName}`}
       onLogout={handleLogout}
       notifications={notifications}
+      unreadCount={unreadCount}
       onMarkAllNotificationsAsRead={handleMarkAllNotificationsAsRead}
       onMarkAsRead={handleMarkNotificationAsRead}
+      onDeleteNotification={handleDeleteNotification}
     >
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {/* Wallet Card */}
-        <Card
-          id="wallet"
-          className="col-span-full md:col-span-2 lg:col-span-3 bg-card shadow-lg border border-border"
-        >
+        <Card id="wallet" className="col-span-full md:col-span-2 lg:col-span-3">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-lg font-semibold text-muted-foreground">
-              Current Balance
-            </CardTitle>
+            <CardTitle className="text-lg font-semibold text-muted-foreground">Current Balance</CardTitle>
             <Wallet className="h-5 w-5 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-6xl font-extrabold text-paypal-primary">
-              {balance.toLocaleString("en-IN", {
-                style: "currency",
-                currency: "INR",
-              })}
+              {balance.toLocaleString("en-IN", { style: "currency", currency: "INR" })}
             </div>
-            <p className="text-sm text-muted-foreground mt-2">
-              Your available funds
-            </p>
+            <p className="text-sm text-muted-foreground mt-2">Your available funds</p>
             <div className="flex gap-3 mt-6">
-              <Button
-                className="bg-paypal-primary hover:bg-paypal-primary/90 text-paypal-primary-foreground px-6 py-3 text-base font-semibold rounded-lg shadow-md"
-                onClick={() => setShowAddMoneyModal(true)}
-              >
-                <PlusCircle className="mr-2 h-5 w-5" /> Add Money
-              </Button>
-              <Button
-                variant="outline"
-                className="border-paypal-accent text-paypal-accent hover:bg-paypal-accent/10 bg-transparent px-6 py-3 text-base font-semibold rounded-lg shadow-sm"
-                onClick={() => setShowSendMoneyModal(true)}
-              >
-                <Send className="mr-2 h-5 w-5" /> Send Money
-              </Button>
+              <Button onClick={() => setShowAddMoneyModal(true)}><PlusCircle className="mr-2 h-5 w-5" /> Add Money</Button>
+              <Button variant="outline" onClick={() => setShowSendMoneyModal(true)}><Send className="mr-2 h-5 w-5" /> Send Money</Button>
             </div>
           </CardContent>
         </Card>
-
-        {/* Quick Actions */}
-        <QuickActions 
-          onAddMoney={() => setShowAddMoneyModal(true)}
-          onSendMoney={() => setShowSendMoneyModal(true)}
-        />
-
-<div className="col-span-full">
+        <QuickActions onAddMoney={() => setShowAddMoneyModal(true)} onSendMoney={() => setShowSendMoneyModal(true)} />
+        <div className="col-span-full">
           <RecentActivity transactions={transactions} userId={user.id} />
         </div>
       </div>
-      <AddMoneyModal
-        show={showAddMoneyModal}
-        handleClose={() => setShowAddMoneyModal(false)}
-        handleAddMoney={handleAddMoney}
-      />
-      <SendMoneyModal
-        show={showSendMoneyModal}
-        handleClose={() => setShowSendMoneyModal(false)}
-        handleSendMoney={handleSendMoney}
-      />
+      <AddMoneyModal show={showAddMoneyModal} handleClose={() => setShowAddMoneyModal(false)} handleAddMoney={handleAddMoney} />
+      <SendMoneyModal show={showSendMoneyModal} handleClose={() => setShowSendMoneyModal(false)} handleSendMoney={handleSendMoney} />
     </DashboardLayout>
   );
 }

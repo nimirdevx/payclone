@@ -4,6 +4,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
+import java.util.Map;
+import java.util.Optional;
 import org.springframework.transaction.annotation.Transactional;
 
 @RestController
@@ -24,7 +26,20 @@ public class WalletController {
     }
 
     @PostMapping
-    public ResponseEntity<Wallet> createWallet(@RequestBody Wallet wallet) {
+    public ResponseEntity<Wallet> createWallet(@RequestBody Map<String, Long> request) {
+        Long userId = request.get("userId");
+        if (userId == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        // --- FIX: Implement "Get or Create" Logic ---
+        Optional<Wallet> existingWallet = walletRepository.findByUserId(userId);
+        if (existingWallet.isPresent()) {
+            return ResponseEntity.ok(existingWallet.get());
+        }
+
+        Wallet wallet = new Wallet();
+        wallet.setUserId(userId);
         wallet.setBalance(BigDecimal.ZERO);
         wallet.setCurrency("INR");
         Wallet savedWallet = walletRepository.save(wallet);
@@ -42,8 +57,8 @@ public class WalletController {
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping("/credit")
-    public ResponseEntity<Void> credit(@RequestBody WalletTransactionRequest request) {
+    @PostMapping("/add")
+    public ResponseEntity<Void> addMoney(@RequestBody WalletTransactionRequest request) {
         Wallet wallet = walletRepository.findByUserId(request.getUserId()).orElse(null);
         if (wallet == null) {
             return ResponseEntity.badRequest().build();
@@ -53,7 +68,7 @@ public class WalletController {
 
         // Send notification
         String message = String.format("You added %.2f to your wallet.", request.getAmount().doubleValue());
-        kafkaProducerService.sendNotificationEvent(new NotificationRequest(request.getUserId(), message, "Self Transfer"));
+        kafkaProducerService.sendNotificationEvent(new NotificationRequest(request.getUserId(), message, "system"));
 
         return ResponseEntity.ok().build();
     }
@@ -61,7 +76,10 @@ public class WalletController {
     @DeleteMapping("/user/{userId}")
     @Transactional
     public ResponseEntity<Void> deleteWalletByUserId(@PathVariable Long userId) {
-        walletRepository.deleteByUserId(userId);
+        Optional<Wallet> walletOptional = walletRepository.findByUserId(userId);
+        if (walletOptional.isPresent()) {
+            walletRepository.delete(walletOptional.get());
+        }
         return ResponseEntity.ok().build();
     }
 }

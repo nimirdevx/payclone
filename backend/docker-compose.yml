@@ -30,7 +30,7 @@ services:
   service-discovery:
     build:
       context: .
-      dockerfile: service-discovery/Dockerfile
+      dockerfile: Dockerfile
       args:
         SERVICE_PATH: service-discovery
     container_name: service-discovery
@@ -42,7 +42,7 @@ services:
   user-service:
     build:
       context: .
-      dockerfile: user-service/Dockerfile
+      dockerfile: Dockerfile
       args:
         SERVICE_PATH: user-service
     container_name: user-service
@@ -61,7 +61,7 @@ services:
   wallet-service:
     build:
       context: .
-      dockerfile: wallet-service/Dockerfile
+      dockerfile: Dockerfile
       args:
         SERVICE_PATH: wallet-service
     container_name: wallet-service
@@ -74,12 +74,13 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://host.docker.internal:3306/paypal_wallets
       SPRING_DATASOURCE_USERNAME: ${DB_USER}
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      SPRING_KAFKA_PRODUCER_BOOTSTRAP_SERVERS: kafka:29092
 
 
   transaction-service:
     build:
       context: .
-      dockerfile: transaction-service/Dockerfile
+      dockerfile: Dockerfile
       args:
         SERVICE_PATH: transaction-service
     container_name: transaction-service
@@ -99,7 +100,7 @@ services:
   notification-service:
     build:
       context: .
-      dockerfile: notification-service/Dockerfile
+      dockerfile: Dockerfile
       args:
         SERVICE_PATH: notification-service
     container_name: notification-service
@@ -115,7 +116,7 @@ services:
   api-gateway:
     build:
       context: .
-      dockerfile: api-gateway/Dockerfile
+      dockerfile: Dockerfile
       args:
         SERVICE_PATH: api-gateway
     container_name: api-gateway

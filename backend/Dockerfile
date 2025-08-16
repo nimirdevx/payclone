@@ -7,7 +7,6 @@ WORKDIR /app
 
 # Copy the parent pom.xml from the root of the backend directory
 COPY pom.xml .
-
 # Copy all the service-specific pom.xml files to ensure all dependencies can be resolved
 COPY ./api-gateway/pom.xml ./api-gateway/
 COPY ./service-discovery/pom.xml ./service-discovery/
@@ -22,7 +21,6 @@ ARG SERVICE_PATH
 COPY ${SERVICE_PATH}/src ./${SERVICE_PATH}/src
 
 # Run the Maven package command, but skip test compilation and execution entirely.
-# THIS IS THE LINE THAT FIXES THE ERROR.
 RUN mvn -pl ${SERVICE_PATH} -am clean package -Dmaven.test.skip=true
 
 # ---- Final Stage ----
